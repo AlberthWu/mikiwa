@@ -293,3 +293,122 @@ func (t *CharOfAccount) GetAllLimit(keyword string, parent_level_no, level_no, a
 	}
 	return m, err
 }
+
+func (t *CharOfAccount) GetAllLimitChild(issue_date, keyword, component string, company_id, account_type_id, sales_type_id int) (m []CoaRtnJson, err error) {
+	o := orm.NewOrm()
+	var querydata []CoaRtnJson
+	d, err := o.Raw("call sp_ChartOfAccountChild('" + issue_date + "'," + utils.Int2String(company_id) + "," + utils.Int2String(account_type_id) + ",0," + utils.Int2String(sales_type_id) + ",'" + component + "','" + keyword + "',null,null,null,null,null)").QueryRows(&querydata)
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	m = querydata
+	return m, err
+}
+
+func (t *GlAccountType) GetAllList(keyword, component_account string) (m []GlAccountType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	if component_account == "" {
+		cond = cond.And("name__icontains", keyword).And("deleted_at__isnull", true)
+	} else {
+		cond = cond.And("component_account", component_account).AndCond(cond.Or("name__icontains", keyword))
+	}
+
+	qs := GlAccountTypes().SetCond(cond).OrderBy("id")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *GlAccountType) GetAllListAsset(keyword string) (m []GlAccountType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond1 := cond.And("component_account", "Assets").And("deleted_at__isnull", true)
+	qs := GlAccountTypes().SetCond(cond1)
+	cond2 := cond.AndCond(cond1).AndCond(cond.Or("name__icontains", keyword))
+	qs = qs.SetCond(cond2).OrderBy("id")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *GlAccountType) GetAllListExpenses(keyword string) (m []GlAccountType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond1 := cond.And("component_account", "Expenses").And("deleted_at__isnull", true)
+	qs := GlAccountTypes().SetCond(cond1)
+	cond2 := cond.AndCond(cond1).AndCond(cond.Or("name__icontains", keyword))
+	qs = qs.SetCond(cond2).OrderBy("id")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *GlAccountType) GetAllListLiability(keyword string) (m []GlAccountType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond1 := cond.And("component_account", "Liability").And("deleted_at__isnull", true)
+	qs := GlAccountTypes().SetCond(cond1)
+	cond2 := cond.AndCond(cond1).AndCond(cond.Or("name__icontains", keyword))
+	qs = qs.SetCond(cond2).OrderBy("id")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *GlAccountType) GetAllListEquity(keyword string) (m []GlAccountType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond1 := cond.And("component_account", "Equity").And("deleted_at__isnull", true)
+	qs := GlAccountTypes().SetCond(cond1)
+	cond2 := cond.AndCond(cond1).AndCond(cond.Or("name__icontains", keyword))
+	qs = qs.SetCond(cond2).OrderBy("id")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *GlAccountType) GetAllListRevenue(keyword string) (m []GlAccountType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond1 := cond.And("component_account", "Revenue").And("deleted_at__isnull", true)
+	qs := GlAccountTypes().SetCond(cond1)
+	cond2 := cond.AndCond(cond1).AndCond(cond.Or("name__icontains", keyword))
+	qs = qs.SetCond(cond2).OrderBy("id")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *GlAccountType) GetAllListCogs(keyword string) (m []GlAccountType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond1 := cond.And("component_account", "Cogs").And("deleted_at__isnull", true)
+	qs := GlAccountTypes().SetCond(cond1)
+	cond2 := cond.AndCond(cond1).AndCond(cond.Or("name__icontains", keyword))
+	qs = qs.SetCond(cond2).OrderBy("id")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
