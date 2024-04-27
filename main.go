@@ -41,10 +41,6 @@ func main() {
 
 func EnableCors() {
 	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
-
-		// AllowOrigins: []string{"http://localhost:3000", "https://erp.sampurna-group.com"},
-
-		// AllowAllOrigins: true,
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type", "x-xsrf-token", "AxiosHeaders", "X-Requested-With", "X-CSRF-Token", "Accept"},
