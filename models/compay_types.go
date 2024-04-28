@@ -14,7 +14,7 @@ type CompanyTypes struct {
 	AliasName string     `json:"alias_name" orm:"column(alias_name);size(100)"`
 	IsAp      int        `json:"is_ap" orm:"column(is_ap)"`
 	IsAr      int        `json:"is_ar" orm:"column(is_ar)"`
-	Companies []*Company `json:"-" orm:"rel(m2m);rel_through(api.sampurna-group.com/models.CompanyCompanyType)"`
+	Companies []*Company `json:"-" orm:"rel(m2m);rel_through(mikiwa/models.CompanyCompanyType)"`
 }
 
 func (t *CompanyTypes) TableName() string {
