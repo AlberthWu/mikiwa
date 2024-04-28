@@ -10,6 +10,7 @@ package routers
 import (
 	"mikiwa/controllers"
 	accounting "mikiwa/controllers/accounting"
+	finance "mikiwa/controllers/finance"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -39,4 +40,13 @@ func init() {
 
 	// finance
 	// petty cash
+	beego.Router("/v1/finance/pettycash", &finance.PettyCashHController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/finance/pettycash/:id", &finance.PettyCashHController{}, "put:Put;get:GetOne;delete:Delete")
+	beego.Router("/v1/finance/pettycash/list/:id", &finance.PettyCashHController{}, "get:GetAllList")
+	beego.Router("/v1/finance/pettycash/reorder", &finance.PettyCashHController{}, "get:ReOrderNumList;post:ReOrderNum")
+
+	beego.Router("/v1/finance/pettycash/detail/checkdelete/:id", &finance.PettyCashController{}, "get:CheckDelete")
+	beego.Router("/v1/finance/pettycash/detail", &finance.PettyCashController{}, "post:Post")
+	beego.Router("/v1/finance/pettycash/detail/:id", &finance.PettyCashController{}, "put:Put;delete:Delete")
+
 }
