@@ -21,7 +21,7 @@ type (
 		CreatedAt   time.Time `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
 		UpdatedAt   time.Time `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
 		DeletedAt   time.Time `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
-		// Users     []*Users  `json:"-" orm:"rel(m2m);rel_through(api.sampurna-group.com/models.UsersSysMenu)"`
+		// Users     []*Users  `json:"-" orm:"rel(m2m);rel_through(mikiwa/models.UsersSysMenu)"`
 	}
 
 	SysPermission struct {
@@ -40,7 +40,7 @@ type (
 		CreatedAt time.Time `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
 		UpdatedAt time.Time `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
 		DeletedAt time.Time `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
-		// Users     []*Users  `json:"-" orm:"rel(m2m);rel_through(api.sampurna-group.com/models.SysUserRole)"`
+		// Users     []*Users  `json:"-" orm:"rel(m2m);rel_through(mikiwa/models.SysUserRole)"`
 	}
 
 	SysRoleMenuPermission struct {
