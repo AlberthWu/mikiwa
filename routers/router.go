@@ -11,16 +11,33 @@ import (
 	"mikiwa/controllers"
 	accounting "mikiwa/controllers/accounting"
 	finance "mikiwa/controllers/finance"
+	master "mikiwa/controllers/master"
+	sys_manager "mikiwa/controllers/sys_manager"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
 
 func init() {
-	// users
+	// aut
 	beego.Router("/v1/users/login", &controllers.AuthController{}, "post:Login")
 	beego.Router("/v1/users/logout", &controllers.AuthController{}, "post:Logout")
 	beego.Router("/v1/users/forgot", &controllers.AuthController{}, "post:Forgot")
 	beego.Router("/v1/users/whoami", &controllers.AuthController{}, "get:GetMe")
+
+	// users
+	beego.Router("/v1/users", &controllers.UsersControllers{}, "post:Post;get:GetAll")
+	beego.Router("/v1/users/:id", &controllers.UsersControllers{}, "put:Put;get:GetOne")
+	beego.Router("/v1/users/menu/:id", &controllers.UsersControllers{}, "get:GetMenu")
+
+	// privileges
+	beego.Router("/v1/sys_manager/menu/list/:id", &sys_manager.MenuController{}, "get:GetAll")
+
+	// gudang
+	beego.Router("/v1/pool", &master.PoolController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/pool/list", &master.PoolController{}, "get:GetAllList")
+	beego.Router("/v1/pool/:id", &master.PoolController{}, "put:Put;delete:Delete;get:GetOne")
+
+	// product
 
 	// accounting
 	beego.Router("/v1/accounting/account_type/list", &accounting.AccountTypeController{}, "get:GetAllList")

@@ -173,3 +173,96 @@ func CheckPrivileges(user_id, form_id, permmission int) bool {
 	}
 	return status
 }
+
+type (
+	SysMenuHeaderRtn struct {
+		Id    int                `json:"id"`
+		Label string             `json:"label"`
+		Items []SysMenuParentRtn `json:"items"`
+	}
+
+	SysMenuParentRtn struct {
+		Id    int               `json:"id"`
+		Label string            `json:"label"`
+		Icon  string            `json:"icon"`
+		To    string            `json:"to"`
+		Items []SysMenuChildRtn `json:"items,omitempty"`
+	}
+
+	SysMenuChildRtn struct {
+		Id    int    `json:"id"`
+		Label string `json:"label"`
+		Icon  string `json:"icon"`
+		To    string `json:"to"`
+	}
+)
+
+func (t *SysMenu) GetAllMenu(id int) ([]SysMenuHeaderRtn, error) {
+	var detail []SysMenu
+	var m SysMenu
+	// var []detail int
+	o := orm.NewOrm()
+	num, err := o.Raw("call sp_SysUserMenu(?,1,0)", id).QueryRows(&detail)
+	var detailrtn []SysMenuHeaderRtn
+	for _, list := range detail {
+
+		plist := m.GetParentList(list.Id, id)
+		detailrtn = append(detailrtn, SysMenuHeaderRtn{
+			Id:    list.Id,
+			Label: list.Label,
+			Items: plist,
+		})
+	}
+
+	if num == 0 {
+		return nil, orm.ErrNoRows
+	}
+	return detailrtn, err
+}
+
+func (t *SysMenu) GetParentList(id, user_id int) []SysMenuParentRtn {
+	var detail []SysMenu
+	var m SysMenu
+	// num, _ := SysMenus().Filter("parent_id", id).Filter("deleted_at__isnull", true).All(&detail)
+	o := orm.NewOrm()
+	num, _ := o.Raw("call sp_SysUserMenu(?,2,?)", user_id, id).QueryRows(&detail)
+
+	var detailrtn []SysMenuParentRtn
+	for _, list := range detail {
+		clist := m.GetChildList(list.Id, user_id)
+		detailrtn = append(detailrtn, SysMenuParentRtn{
+			Id:    list.Id,
+			Label: list.Label,
+			Icon:  list.Icon,
+			To:    list.To,
+			Items: clist,
+		})
+	}
+
+	if num == 0 {
+		return nil
+	}
+	return detailrtn
+}
+
+func (t *SysMenu) GetChildList(id, user_id int) []SysMenuChildRtn {
+	var detail []SysMenu
+
+	o := orm.NewOrm()
+	num, _ := o.Raw("call sp_SysUserMenu(?,3,?)", user_id, id).QueryRows(&detail)
+
+	var detailrtn []SysMenuChildRtn
+	for _, list := range detail {
+		detailrtn = append(detailrtn, SysMenuChildRtn{
+			Id:    list.Id,
+			Label: list.Label,
+			Icon:  list.Icon,
+			To:    list.To,
+		})
+	}
+
+	if num == 0 {
+		return nil
+	}
+	return detailrtn
+}
