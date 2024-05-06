@@ -37,7 +37,6 @@ func (c *CoaController) Post() {
 	form_id = base.FormName(form_coa)
 
 	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
-	write_aut = true
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorization", map[string]interface{}{"message": "Please contact administrator"})
@@ -60,7 +59,6 @@ func (c *CoaController) Post() {
 	valid := validation.Validation{}
 	valid.Required(effective_date, "effective_date").Message("is required")
 	valid.Required(company_id, "company_id").Message("is required")
-	valid.Required(account_type_id, "account_type_id").Message("is required")
 	valid.Required(code_coa, "code_coa").Message("is required")
 	valid.Required(name_coa, "name_coa").Message("is required")
 	// valid.Required(sales_type_id, "sales_type_id").Message("is required")
@@ -240,7 +238,6 @@ func (c *CoaController) Put() {
 	form_id = base.FormName(form_coa)
 
 	put_aut := models.CheckPrivileges(user_id, form_id, base.Update)
-	put_aut = true
 	if !put_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorization", map[string]interface{}{"message": "Please contact administrator"})
@@ -289,7 +286,6 @@ func (c *CoaController) Put() {
 	valid := validation.Validation{}
 	valid.Required(effective_date, "effective_date").Message("is required")
 	valid.Required(company_id, "company_id").Message("is required")
-	valid.Required(account_type_id, "account_type_id").Message("is required")
 	valid.Required(code_coa, "code_coa").Message("is required")
 	valid.Required(name_coa, "name_coa").Message("is required")
 	// valid.Required(sales_type_id, "sales_type_id").Message("is required")

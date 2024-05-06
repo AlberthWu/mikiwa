@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -90,3 +91,35 @@ type (
 		Terms           int    `json:"terms"`
 	}
 )
+
+func GetAllInternalLimit(keyword string) (m []CompanyListRtnJson, err error) {
+	var companies []Company
+	cond := orm.NewCondition()
+	cond1 := cond.And("deleted_at__isnull", true).And("CompanyTypes__TypeId__Id", 1)
+	qs := Companies().SetCond(cond1)
+	cond2 := cond.AndCond(cond1).AndCond(cond.Or("name__icontains", keyword).Or("code__icontains", keyword))
+	qs = qs.SetCond(cond2).RelatedSel()
+	_, err = qs.Limit(100).Offset(0).All(&companies)
+
+	var companylist []CompanyListRtnJson
+	for _, val := range companies {
+
+		companylist = append(companylist, CompanyListRtnJson{
+			Id:              val.Id,
+			Code:            val.Code,
+			Name:            val.Name,
+			Status:          int(val.Status),
+			BankId:          val.BankId,
+			BankName:        val.BankName,
+			BankNo:          val.BankNo,
+			BankAccountName: val.BankAccountName,
+			BankBranch:      val.BankBranch,
+			IsTax:           val.IsTax,
+		})
+	}
+
+	if len(companylist) == 0 {
+		return companylist, errors.New("No data")
+	}
+	return companylist, err
+}

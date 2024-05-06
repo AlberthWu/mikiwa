@@ -66,4 +66,8 @@ func init() {
 	beego.Router("/v1/finance/pettycash/detail", &finance.PettyCashController{}, "post:Post")
 	beego.Router("/v1/finance/pettycash/detail/:id", &finance.PettyCashController{}, "put:Put;delete:Delete")
 
+	// companies
+	// internal
+	beego.Router("/v1/internal/list", &master.CompanyController{}, "get:GetAllInternalList")
+
 }
