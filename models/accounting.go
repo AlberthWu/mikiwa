@@ -63,7 +63,7 @@ func (t *CharOfAccount) TableName() string {
 	return "chart_of_accounts"
 }
 
-func CharOfAccounts() orm.QuerySeter {
+func ChartOfAccounts() orm.QuerySeter {
 	return orm.NewOrm().QueryTable(new(CharOfAccount))
 }
 
@@ -155,16 +155,17 @@ type (
 )
 
 func (t *CharOfAccount) CheckCode(id, company_id int, code string) bool {
-	exist := CharOfAccounts().Exclude("id", id).Filter("company_id", company_id).Filter("code_coa", code).Filter("deleted_at__isnull", true).Exist()
+	exist := ChartOfAccounts().Exclude("id", id).Filter("company_id", company_id).Filter("code_coa", code).Filter("deleted_at__isnull", true).Exist()
 	return exist
 }
 
 func (t *GlAccountType) GetById(id int) (m *GlAccountType, err error) {
+	m = &GlAccountType{}
 	cond := orm.NewCondition()
 	cond1 := cond.And("id", id)
 	qs := GlAccountTypes().SetCond(cond1)
 
-	if err = qs.One(&m); err != nil {
+	if err = qs.One(m); err != nil {
 		return nil, err
 	}
 
@@ -195,10 +196,10 @@ func (t *GlAccountType) GetAll(keyword string, p, size int) (u utils.Page, err e
 
 func (t *CharOfAccount) GetById(id int) (m *CoaRtn, err error) {
 	o := orm.NewOrm()
-	var detail *CharOfAccount
+	var detail CharOfAccount
 	cond := orm.NewCondition()
 	cond1 := cond.And("deleted_at__isnull", true).And("id", id)
-	qs := CharOfAccounts().SetCond(cond1)
+	qs := ChartOfAccounts().SetCond(cond1)
 	err = qs.One(&detail)
 
 	var companyrtn CompanyListRtnJson
@@ -234,7 +235,7 @@ func (t *CharOfAccount) GetById(id int) (m *CoaRtn, err error) {
 		JournalPosition: detail.JournalPosition,
 	}
 
-	if err == nil && detail == nil {
+	if err == nil && m == nil {
 		err = orm.ErrNoRows
 	}
 
