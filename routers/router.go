@@ -18,6 +18,9 @@ import (
 )
 
 func init() {
+	// utility
+	beego.Router("/v1/getsvrdate", &controllers.BaseController{}, "get:GetSvrDate")
+
 	// aut
 	beego.Router("/v1/users/login", &controllers.AuthController{}, "post:Login")
 	beego.Router("/v1/users/logout", &controllers.AuthController{}, "post:Logout")
