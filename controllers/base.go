@@ -122,3 +122,8 @@ func FormName(form_name string) int {
 	o.Raw("select id from sys_menus where form_name = ?", form_name).QueryRow(&id)
 	return id
 }
+
+func (c *BaseController) GetSvrDate() {
+	c.Data["json"] = utils.GetSvrDate()
+	c.ServeJSON()
+}
