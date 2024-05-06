@@ -88,3 +88,42 @@ func (t *UserLog) Update(fields ...string) error {
 	}
 	return nil
 }
+
+// Check banks name already exists or not
+func ChecKUserName(name string) bool {
+	exist := Userss().Filter("username", name).Exist()
+	return exist
+}
+
+func CheckEmail(email string) bool {
+	exist := Userss().Filter("email", email).Exist()
+	return exist
+}
+
+func ChecKUserNamePut(id int, name string) bool {
+	exist := Userss().Filter("username", name).Exclude("id", id).Exist()
+	return exist
+}
+
+func CheckEmailPut(id int, email string) bool {
+	exist := Userss().Filter("email", email).Exclude("id", id).Exist()
+	return exist
+}
+
+func GetAllMenu(id int) ([]Users, error) {
+	var detail []Users
+	num, err := Userss().Filter("deleted_at__isnull", true).Filter("SysRole__RoleId__Id", 4).All(&detail)
+
+	var details []Users
+	for _, list := range detail {
+		details = append(details, Users{
+			Id:       list.Id,
+			Username: list.Username,
+		})
+	}
+
+	if num == 0 {
+		return nil, orm.ErrNoRows
+	}
+	return details, err
+}
