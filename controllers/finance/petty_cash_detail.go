@@ -107,7 +107,7 @@ func (c *PettyCashController) Post() {
 		}
 
 		var coa models.CharOfAccount
-		err = models.CharOfAccounts().Filter("id", v.AccountId).One(&coa)
+		err = models.ChartOfAccounts().Filter("id", v.AccountId).One(&coa)
 		if err == orm.ErrNoRows {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, "Account id unregistered/Illegal data")
@@ -274,7 +274,7 @@ func (c *PettyCashController) Put() {
 		}
 
 		var coa models.CharOfAccount
-		err = models.CharOfAccounts().Filter("id", v.AccountId).One(&coa)
+		err = models.ChartOfAccounts().Filter("id", v.AccountId).One(&coa)
 		if err == orm.ErrNoRows {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, "Account id unregistered/Illegal data")

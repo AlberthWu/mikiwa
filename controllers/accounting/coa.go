@@ -137,7 +137,7 @@ func (c *CoaController) Post() {
 
 	var coa models.CharOfAccount
 	if parent_id > 0 {
-		if err = models.CharOfAccounts().Filter("account_type_id", account_type_id).Filter("id", parent_id).One(&coa); err == orm.ErrNoRows {
+		if err = models.ChartOfAccounts().Filter("account_type_id", account_type_id).Filter("id", parent_id).One(&coa); err == orm.ErrNoRows {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, "Parent account unregistered/Illegal data")
 			c.ServeJSON()
@@ -260,7 +260,7 @@ func (c *CoaController) Put() {
 	// sales_type_id := strings.TrimSpace(c.GetString("sales_type_id"))
 
 	var querydata models.CharOfAccount
-	err = models.CharOfAccounts().Filter("id", id).One(&querydata)
+	err = models.ChartOfAccounts().Filter("id", id).One(&querydata)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, "Chart of account id unregistered/Illegal data")
@@ -364,7 +364,7 @@ func (c *CoaController) Put() {
 
 	var coa models.CharOfAccount
 	if parent_id > 0 {
-		if err = models.CharOfAccounts().Filter("account_type_id", account_type_id).Filter("id", parent_id).One(&coa); err == orm.ErrNoRows {
+		if err = models.ChartOfAccounts().Filter("account_type_id", account_type_id).Filter("id", parent_id).One(&coa); err == orm.ErrNoRows {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, "Parent account unregistered/Illegal data")
 			c.ServeJSON()
@@ -472,7 +472,7 @@ func (c *CoaController) Delete() {
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 
 	var querydata models.CharOfAccount
-	err = models.CharOfAccounts().Filter("id", id).One(&querydata)
+	err = models.ChartOfAccounts().Filter("id", id).One(&querydata)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, "Char of account unregistered/Illegal data")
@@ -495,7 +495,7 @@ func (c *CoaController) Delete() {
 		return
 	}
 
-	models.CharOfAccounts().Filter("id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
+	models.ChartOfAccounts().Filter("id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
 
 	utils.ReturnHTTPError(&c.Controller, 200, "soft delete success")
 	c.ServeJSON()
