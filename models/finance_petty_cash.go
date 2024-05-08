@@ -484,3 +484,50 @@ func (t *PettyCashHeader) ReOrderNumList(keyword, field_name, match_mode, value_
 	}
 	return m, err
 }
+
+func (t *PettyCashHeader) GetPettyCashHeader(keyword, field_name, match_mode, value_name string, p, size, allsize int, issue_date, issue_date2 *string, voucher_id *int, company_id, account_id, sales_type_id, status_id, status_gl_id, user_id, report_grup, report_type, search_detail int, field_nameTop string) (u utils.Page, num int64, err error) {
+	o := orm.NewOrm()
+	var c int
+	var querydata []PettyCashRtnHeader
+
+	o.Raw("call sp_PettyCashReportCount(?,?,null,"+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(status_id)+","+utils.Int2String(status_gl_id)+","+utils.Int2String(user_id)+","+utils.Int2String(report_grup)+","+utils.Int2String(report_type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_nameTop+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &issue_date2).QueryRow(&c)
+	if allsize == 1 && c > 0 {
+		size = c
+	}
+	num, err = o.Raw("call sp_PettyCashReport(?,?,null,"+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(status_id)+","+utils.Int2String(status_gl_id)+","+utils.Int2String(user_id)+","+utils.Int2String(report_grup)+","+utils.Int2String(report_type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_nameTop+"','"+field_name+"','"+match_mode+"','"+value_name+"', "+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &issue_date, &issue_date2).QueryRows(&querydata)
+
+	if num == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+
+	return utils.Pagination(int(c), p, size, querydata), num, err
+}
+
+func (t *PettyCashHeader) GetPettyCash(keyword, field_name, match_mode, value_name string, p, size, allsize int, issue_date, issue_date2 *string, voucher_id *int, company_id, account_id, sales_type_id, status_id, status_gl_id, user_id, report_grup, report_type, search_detail int, field_nameTop string) (u utils.Page, num int64, err error) {
+	o := orm.NewOrm()
+	var c int
+	var querydata []PettyCashDailyJson
+
+	o.Raw("call sp_PettyCashReportCount(?,?,null,"+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(status_id)+","+utils.Int2String(status_gl_id)+","+utils.Int2String(user_id)+","+utils.Int2String(report_grup)+","+utils.Int2String(report_type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_nameTop+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &issue_date2).QueryRow(&c)
+	if allsize == 1 && c > 0 {
+		size = c
+	}
+	num, err = o.Raw("call sp_PettyCashReport(?,?,null,"+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(status_id)+","+utils.Int2String(status_gl_id)+","+utils.Int2String(user_id)+","+utils.Int2String(report_grup)+","+utils.Int2String(report_type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_nameTop+"','"+field_name+"','"+match_mode+"','"+value_name+"', "+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &issue_date, &issue_date2).QueryRows(&querydata)
+
+	if num == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+
+	return utils.Pagination(int(c), p, size, querydata), num, err
+}
+
+func (t *PettyCashHeader) GetVoucher(keyword, field_name, match_mode, value_name string, p, size, allsize int, issue_date, issue_date2 *string, voucher_id int, company_id, account_id, sales_type_id, status_id, status_gl_id, user_id, report_grup, report_type, search_detail int, field_nameTop string) (m []PettyCashVoucherJson, err error) {
+	o := orm.NewOrm()
+	var num int64
+
+	num, err = o.Raw("call sp_PettyCashReport(?,?,"+utils.Int2String(voucher_id)+","+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(status_id)+","+utils.Int2String(status_gl_id)+","+utils.Int2String(user_id)+","+utils.Int2String(report_grup)+","+utils.Int2String(report_type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_nameTop+"','"+field_name+"','"+match_mode+"','"+value_name+"', null,null)", &issue_date, &issue_date2).QueryRows(&m)
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
