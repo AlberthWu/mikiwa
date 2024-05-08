@@ -232,6 +232,7 @@ type (
 		AccountName       string  `json:"account_name"`
 		Debet             float64 `json:"debet"`
 		Credit            float64 `json:"credit"`
+		Balance           float64 `json:"balance"`
 		Memo              string  `json:"memo"`
 		Pic               string  `json:"pic"`
 		ReceivingId       int     `json:"receiving_id"`
