@@ -69,6 +69,15 @@ func init() {
 	beego.Router("/v1/finance/pettycash/detail", &finance.PettyCashController{}, "post:Post")
 	beego.Router("/v1/finance/pettycash/detail/:id", &finance.PettyCashController{}, "put:Put;delete:Delete")
 
+	// report
+	beego.Router("/v1/finance/report/pettycash/summary/1", &finance.FinanceReportController{}, "get:ReportPettyCashSummaryDaily")
+	beego.Router("/v1/finance/report/pettycash/summary/2", &finance.FinanceReportController{}, "get:ReportPettyCashSummaryMonthly")
+	beego.Router("/v1/finance/report/pettycash/summary/3", &finance.FinanceReportController{}, "get:ReportPettyCashSummaryYearly")
+	beego.Router("/v1/finance/report/pettycash/detail/1", &finance.FinanceReportController{}, "get:ReportPettyCashDaily")
+	beego.Router("/v1/finance/report/pettycash/detail/2", &finance.FinanceReportController{}, "get:ReportPettyCashMonthly")
+	beego.Router("/v1/finance/report/pettycash/detail/3", &finance.FinanceReportController{}, "get:ReportPettyCashYearly")
+	beego.Router("/v1/finance/report/pettycash/voucher/:id", &finance.FinanceReportController{}, "get:ReportVoucher")
+
 	// companies
 	// internal
 	beego.Router("/v1/internal/list", &master.CompanyController{}, "get:GetAllInternalList")

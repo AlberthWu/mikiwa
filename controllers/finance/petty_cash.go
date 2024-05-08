@@ -30,6 +30,8 @@ func (c *PettyCashHController) Post() {
 	var user_name string
 	var user_id, form_id int
 
+	var voucher_seq_no int = 0
+
 	fmt.Print("Check :", user_id, form_id, "..")
 	sess := c.GetSession("profile")
 	if sess != nil {
@@ -43,6 +45,7 @@ func (c *PettyCashHController) Post() {
 	debet, _ := c.GetFloat("debet")
 	credit, _ := c.GetFloat("credit")
 	transaction_type := strings.TrimSpace(c.GetString("transaction_type"))
+	voucher_no := strings.TrimSpace(c.GetString("voucher_no"))
 	pic := strings.TrimSpace(c.GetString("pic"))
 	memo := strings.TrimSpace(c.GetString("memo"))
 
@@ -121,6 +124,11 @@ func (c *PettyCashHController) Post() {
 	num, reference_no = models.GeneratePettyCashNumber(issuedate, company_id, account_id, companies.Code, voucher_code, transaction_type)
 	period = string(issuedate.Format("20060102"))
 
+	if voucher_no == "" {
+		voucher_no = reference_no
+		voucher_seq_no = num
+	}
+
 	batch_no = string(issuedate.Format("200601")) + reference_no
 	t_pettycashh = models.PettyCashHeader{
 		IssueDate:       issuedate,
@@ -130,9 +138,9 @@ func (c *PettyCashHController) Post() {
 		AccountId:       account_id,
 		AccountCode:     coa.CodeCoa,
 		AccountName:     coa.NameCoa,
-		VoucherSeqNo:    num,
+		VoucherSeqNo:    voucher_seq_no,
 		VoucherCode:     voucher_code,
-		VoucherNo:       reference_no,
+		VoucherNo:       voucher_no,
 		Debet:           debet,
 		Credit:          credit,
 		BatchNo:         batch_no,
