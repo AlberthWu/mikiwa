@@ -119,7 +119,7 @@ func GetAllInternalLimit(keyword string) (m []CompanyListRtnJson, err error) {
 	}
 
 	if len(companylist) == 0 {
-		return companylist, errors.New("No data")
+		return companylist, errors.New("no data")
 	}
 	return companylist, err
 }

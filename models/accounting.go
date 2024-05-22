@@ -169,10 +169,6 @@ func (t *GlAccountType) GetById(id int) (m *GlAccountType, err error) {
 		return nil, err
 	}
 
-	if m == nil {
-		err = orm.ErrNoRows
-	}
-
 	return m, err
 }
 
@@ -233,10 +229,6 @@ func (t *CharOfAccount) GetById(id int) (m *CoaRtn, err error) {
 		CodeIn:          detail.CodeIn,
 		StatusId:        detail.StatusId,
 		JournalPosition: detail.JournalPosition,
-	}
-
-	if err == nil && m == nil {
-		err = orm.ErrNoRows
 	}
 
 	return m, err

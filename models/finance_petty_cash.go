@@ -381,10 +381,6 @@ func (t *PettyCashHeader) GetById(id, user_id int) (m *PettyCashRtnJson, err err
 		DetailList:       dlist,
 	}
 
-	if err == nil && m == nil {
-		err = orm.ErrNoRows
-	}
-
 	return m, err
 }
 
@@ -399,7 +395,7 @@ func (t *PettyCash) GetById(id int) (m *PettyCashVoucherJson, err error) {
 
 func (t *PettyCashHeader) GetByIdVoucher(voucher_id int) (m []PettyCashVoucherJson, err error) {
 	var querydata []PettyCash
-	num, _ := PettyCashs().Filter("voucher_id", voucher_id).Filter("deleted_at__isnull", true).All(&querydata)
+	num, err := PettyCashs().Filter("voucher_id", voucher_id).Filter("deleted_at__isnull", true).All(&querydata)
 
 	for _, list := range querydata {
 		m = append(m, PettyCashVoucherJson{
@@ -420,7 +416,7 @@ func (t *PettyCashHeader) GetByIdVoucher(voucher_id int) (m []PettyCashVoucherJs
 		})
 	}
 
-	if num == 0 && err == nil {
+	if err == nil && num == 0 {
 		err = orm.ErrNoRows
 	}
 	return m, err

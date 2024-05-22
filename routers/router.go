@@ -41,6 +41,18 @@ func init() {
 	beego.Router("/v1/pool/:id", &master.PoolController{}, "put:Put;delete:Delete;get:GetOne")
 
 	// product
+	// division
+	beego.Router("/v1/product/division", &master.ProductDivisionController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/product/division/:id", &master.ProductDivisionController{}, "put:Put;get:GetOne")
+	// type
+	beego.Router("/v1/product/type", &master.ProductTypeController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/product/type/:id", &master.ProductTypeController{}, "put:Put;get:GetOne")
+	// product
+	beego.Router("/v1/product", &master.ProductController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/product/:id", &master.ProductController{}, "put:Put;get:GetOne;delete:Delete")
+	// uom
+	beego.Router("/v1/product/uom", &master.UomController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/product/uom/:id", &master.UomController{}, "put:Put;get:GetOne")
 
 	// accounting
 	beego.Router("/v1/accounting/account_type/list", &accounting.AccountTypeController{}, "get:GetAllList")
