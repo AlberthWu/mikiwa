@@ -12,7 +12,7 @@ type BaseController struct {
 var form_product = "product"
 var form_product_division = "product_division"
 var form_product_type = "product_type"
-var uom = "uom"
+var form_uom = "uom"
 
 var t_product models.Product
 var t_product_type models.ProductType

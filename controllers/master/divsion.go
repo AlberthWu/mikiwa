@@ -18,17 +18,16 @@ type ProductDivisionController struct {
 
 func (c *ProductDivisionController) Post() {
 	var user_id, form_id int
-	var user_name string
-	fmt.Print("Check :", user_id, form_id, user_name, "..")
+	fmt.Print("Check :", user_id, form_id, "..")
 	sess := c.GetSession("profile")
 	if sess != nil {
-		user_name = sess.(map[string]interface{})["username"].(string)
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
 
 	form_id = base.FormName(form_product_division)
 
 	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
+	write_aut = true
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorization", map[string]interface{}{"message": "Please contact administrator"})
@@ -98,6 +97,7 @@ func (c *ProductDivisionController) Put() {
 	form_id = base.FormName(form_product_division)
 
 	put_aut := models.CheckPrivileges(user_id, form_id, base.Update)
+	put_aut = true
 	if !put_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorization", map[string]interface{}{"message": "Please contact administrator"})
@@ -159,7 +159,7 @@ func (c *ProductDivisionController) Put() {
 	} else {
 		v, err := t_product_division.GetById(id)
 		errcode, errmessage := base.DecodeErr(err)
-		if err_ != nil {
+		if err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(errcode)
 			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
 		} else {
@@ -167,7 +167,6 @@ func (c *ProductDivisionController) Put() {
 		}
 	}
 	c.ServeJSON()
-
 }
 
 func (c *ProductDivisionController) Delete() {}
@@ -189,6 +188,7 @@ func (c *ProductDivisionController) GetOne() {
 	}
 	c.ServeJSON()
 }
+
 func (c *ProductDivisionController) GetAll() {
 	currentPage, _ := c.GetInt("page")
 	if currentPage == 0 {

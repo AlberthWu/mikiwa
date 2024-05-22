@@ -90,7 +90,7 @@ func GetAllPool(keyword string, p, size int) (u utils.Page, err error) {
 	}
 
 	if len(poolrtn) == 0 {
-		return utils.Pagination(c, p, size, nil), errors.New("No data")
+		return utils.Pagination(c, p, size, nil), errors.New("no data")
 	}
 	return utils.Pagination(c, p, size, poolrtn), err
 
@@ -115,17 +115,16 @@ func GetAllPoolLimit(keyword string) (m []PoolRtnJson, err error) {
 	}
 
 	if len(poolrtn) == 0 {
-		return poolrtn, errors.New("No data")
+		return poolrtn, errors.New("no data")
 	}
 	return poolrtn, err
 
 }
 
 func GetByIdPool(id int) (m *PoolRtnJson, err error) {
-	var pools *Pool
-	pools = &Pool{Id: id}
+	pools := &Pool{Id: id}
 	if err := Pools().Filter("id", id).Filter("deleted_at__isnull", true).One(pools); err == orm.ErrNoRows {
-		return nil, errors.New("No data")
+		return nil, errors.New("no data")
 	}
 	m = &PoolRtnJson{
 		Id:     pools.Id,

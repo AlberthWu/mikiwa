@@ -11,7 +11,7 @@ type (
 )
 
 func (t *SysRolePermission) TableName() string {
-	return "sys_role_menu_permission"
+	return "sys_role_permission"
 }
 
 func SysRolePermissions() orm.QuerySeter {
