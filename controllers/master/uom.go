@@ -219,3 +219,21 @@ func (c *UomController) GetAll() {
 	}
 	c.ServeJSON()
 }
+
+func (c *UomController) GetAllList() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_uom.GetAllList(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}

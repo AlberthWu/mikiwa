@@ -62,10 +62,10 @@ func (c *ProductTypeController) Post() {
 	}
 
 	t_product_type = models.ProductType{
-		ProductTypeName: type_name,
-		IsPurchase:      is_purchase,
-		IsSales:         is_sales,
-		IsProduction:    is_production,
+		TypeName:     type_name,
+		IsPurchase:   is_purchase,
+		IsSales:      is_sales,
+		IsProduction: is_production,
 	}
 
 	d, err_ := t_product_type.Insert(t_product_type)
@@ -133,7 +133,7 @@ func (c *ProductTypeController) Put() {
 	}
 
 	t_product_type.Id = id
-	t_product_type.ProductTypeName = type_name
+	t_product_type.TypeName = type_name
 	t_product_type.IsPurchase = is_purchase
 	t_product_type.IsSales = is_sales
 	t_product_type.IsProduction = is_production
@@ -195,6 +195,27 @@ func (c *ProductTypeController) GetAll() {
 	is_production := strings.TrimSpace(c.GetString("is_production"))
 
 	d, err := t_product_type.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, is_purchase, is_sales, is_production)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *ProductTypeController) GetAllList() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	is_purchase := strings.TrimSpace(c.GetString("is_purchase"))
+	is_sales := strings.TrimSpace(c.GetString("is_sales"))
+	is_production := strings.TrimSpace(c.GetString("is_production"))
+
+	d, err := t_product_type.GetAllList(keyword, is_purchase, is_sales, is_production)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200

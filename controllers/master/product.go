@@ -189,7 +189,7 @@ func (c *ProductController) Post() {
 		ProductCode:         ob.ProductCode,
 		ProductName:         ob.ProductName,
 		ProductTypeId:       ob.ProductTypeId,
-		ProductTypeName:     types.ProductTypeName,
+		ProductTypeName:     types.TypeName,
 		ProductDivisionId:   ob.ProductDivisonId,
 		ProductDivisionCode: division.DivisionCode,
 		ProductDivisionName: division.DivisionName,
@@ -407,7 +407,7 @@ func (c *ProductController) Put() {
 	t_product.ProductCode = ob.ProductCode
 	t_product.ProductName = ob.ProductName
 	t_product.ProductTypeId = ob.ProductTypeId
-	t_product.ProductTypeName = types.ProductTypeName
+	t_product.ProductTypeName = types.TypeName
 	t_product.ProductDivisionId = ob.ProductDivisonId
 
 	t_product.ProductDivisionCode = division.DivisionCode
@@ -532,6 +532,13 @@ func (c *ProductController) GetOne() {
 }
 
 func (c *ProductController) GetAll() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	var updatedat *string
+
 	currentPage, _ := c.GetInt("page")
 	if currentPage == 0 {
 		currentPage = 1
@@ -546,16 +553,29 @@ func (c *ProductController) GetAll() {
 	match_mode := strings.TrimSpace(c.GetString("match_mode"))
 	value_name := strings.TrimSpace(c.GetString("value_name"))
 	field_name := strings.TrimSpace(c.GetString("field_name"))
-	is_purchase := strings.TrimSpace(c.GetString("is_purchase"))
-	is_sales := strings.TrimSpace(c.GetString("is_sales"))
-	is_production := strings.TrimSpace(c.GetString("is_production"))
+	allsize, _ := c.GetInt("allsize")
 
-	d, err := t_product.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, is_purchase, is_sales, is_production)
+	status_id, _ := c.GetInt("status_id")
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	purchase_ids := strings.TrimSpace(c.GetString("purchase_ids"))
+	sales_ids := strings.TrimSpace(c.GetString("sales_ids"))
+	production_ids := strings.TrimSpace(c.GetString("production_ids"))
+	division_ids := strings.TrimSpace(c.GetString("division_ids"))
+	type_ids := strings.TrimSpace(c.GetString("type_ids"))
+
+	if updated_at == "" {
+		updatedat = nil
+
+	} else {
+		updatedat = &updated_at
+	}
+
+	d, err := t_product.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, status_id, user_id, division_ids, type_ids, production_ids, purchase_ids, sales_ids, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
 		c.Ctx.ResponseWriter.WriteHeader(code)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", d)
 	} else if err != nil {
 		c.Ctx.ResponseWriter.WriteHeader(code)
 		utils.ReturnHTTPError(&c.Controller, code, message)
@@ -564,3 +584,74 @@ func (c *ProductController) GetAll() {
 	}
 	c.ServeJSON()
 }
+
+func (c *ProductController) GetDetail() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	var updatedat *string
+
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+
+	status_id, _ := c.GetInt("status_id")
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	purchase_ids := strings.TrimSpace(c.GetString("purchase_ids"))
+	sales_ids := strings.TrimSpace(c.GetString("sales_ids"))
+	production_ids := strings.TrimSpace(c.GetString("production_ids"))
+	division_ids := strings.TrimSpace(c.GetString("division_ids"))
+	type_ids := strings.TrimSpace(c.GetString("type_ids"))
+
+	if updated_at == "" {
+		updatedat = nil
+
+	} else {
+		updatedat = &updated_at
+	}
+
+	d, err := t_product.GetAllDetail(keyword, field_name, match_mode, value_name, status_id, user_id, division_ids, type_ids, production_ids, purchase_ids, sales_ids, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No Data", map[string]interface{}{
+			"field_key":          nil,
+			"field_label":        nil,
+			"field_int":          nil,
+			"field_level":        nil,
+			"field_export":       nil,
+			"field_export_label": nil,
+			"field_footer":       nil,
+			"list":               nil})
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, map[string]interface{}{
+			"field_key":          d[0]["field_key"],
+			"field_label":        d[0]["field_label"],
+			"field_int":          d[0]["field_int"],
+			"field_level":        d[0]["field_level"],
+			"field_export":       d[0]["field_export"],
+			"field_export_label": d[0]["field_export_label"],
+			"field_footer":       d[0]["field_footer"],
+			"list":               d,
+		})
+	}
+	c.ServeJSON()
+}
+func (c *ProductController) GetAllListRaw() {}
+
+func (c *ProductController) GetAllListWip() {}
+
+func (c *ProductController) GetAllListFinishing() {}
+
+func (c *ProductController) GetAllListAcc() {}
+
+func (c *ProductController) GetAllListOthers() {}
+
+func (c *ProductController) GetAllListRecycle() {}

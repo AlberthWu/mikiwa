@@ -44,12 +44,21 @@ func init() {
 	// division
 	beego.Router("/v1/product/division", &master.ProductDivisionController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/product/division/:id", &master.ProductDivisionController{}, "put:Put;get:GetOne")
+	beego.Router("/v1/product/division/list", &master.ProductDivisionController{}, "get:GetAllList")
 	// type
 	beego.Router("/v1/product/type", &master.ProductTypeController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/product/type/:id", &master.ProductTypeController{}, "put:Put;get:GetOne")
+	beego.Router("/v1/product/type/list", &master.ProductTypeController{}, "get:GetAllList")
 	// product
 	beego.Router("/v1/product", &master.ProductController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/product/detail", &master.ProductController{}, "get:GetDetail")
 	beego.Router("/v1/product/:id", &master.ProductController{}, "put:Put;get:GetOne;delete:Delete")
+	beego.Router("/v1/product/list/raw", &master.ProductController{}, "get:GetAllListRaw")
+	beego.Router("/v1/product/list/wip", &master.ProductController{}, "get:GetAllListWip")
+	beego.Router("/v1/product/list/finishing", &master.ProductController{}, "get:GetAllListFinishing")
+	beego.Router("/v1/product/list/acc", &master.ProductController{}, "get:GetAllListAcc")
+	beego.Router("/v1/product/list/others", &master.ProductController{}, "get:GetAllListOthers")
+	beego.Router("/v1/product/list/recycle", &master.ProductController{}, "get:GetAllListRecycle")
 	// uom
 	beego.Router("/v1/product/uom", &master.UomController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/product/uom/:id", &master.UomController{}, "put:Put;get:GetOne")
