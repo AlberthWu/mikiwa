@@ -64,6 +64,7 @@ func init() {
 	// uom
 	beego.Router("/v1/product/uom", &master.UomController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/product/uom/:id", &master.UomController{}, "put:Put;get:GetOne")
+	beego.Router("/v1/product/uom/list", &master.UomController{}, "get:GetAllList")
 
 	// accounting
 	beego.Router("/v1/accounting/account_type/list", &accounting.AccountTypeController{}, "get:GetAllList")
