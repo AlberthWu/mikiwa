@@ -718,12 +718,92 @@ func (c *ProductController) GetAllListRaw() {
 	c.ServeJSON()
 }
 
-func (c *ProductController) GetAllListWip() {}
+func (c *ProductController) GetAllListWip() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
 
-func (c *ProductController) GetAllListFinishing() {}
+	d, err := t_product.GetAllListWip(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
 
-func (c *ProductController) GetAllListAcc() {}
+func (c *ProductController) GetAllListFinishing() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
 
-func (c *ProductController) GetAllListOthers() {}
+	d, err := t_product.GetAllListFinishing(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
 
-func (c *ProductController) GetAllListRecycle() {}
+func (c *ProductController) GetAllListAcc() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_product.GetAllListAcc(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *ProductController) GetAllListOthers() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_product.GetAllListOthers(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *ProductController) GetAllListRecycle() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_product.GetAllListRecycle(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}

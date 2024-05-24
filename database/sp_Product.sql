@@ -89,9 +89,9 @@ BEGIN
 								) x order by product_id,item_no;"));
     else
 		SET @s =  (concat ("select id,product_code,product_name,serial_number,product_type_id,product_type_name,product_division_id,product_division_code,product_division_name,uom_id,uom_code,lead_time,status_id,status_data,is_purchase,is_sales,is_production
-								,'product_code,product_name,serial_number,lead_time,uom_code,product_type_name,division_code,is_purchase,is_sales,is_production,status_id,status_data' field_key
+								,'product_code,product_name,serial_number,lead_time,uom_code,product_type_name,product_division_code,is_purchase,is_sales,is_production,status_id,status_data' field_key
                                 ,'Kode,Nama,Serial,ETA,Uom,Tipe,Divisi,Pembelian,Sales,Produksi,Status,Status Data' field_label
-                                ,'product_code,product_name,serial_number,lead_time,uom_code,product_type_name,division_code,is_purchase,is_sales,is_production,status_id,status_data' field_export
+                                ,'product_code,product_name,serial_number,lead_time,uom_code,product_type_name,product_division_code,is_purchase,is_sales,is_production,status_id,status_data' field_export
                                 ,'Kode,Nama,Serial,ETA,Uom,Tipe,Divisi,Pembelian,Sales,Produksi,Status,Status Data' field_export_label
                                 ,'lead_time' field_int
                                 ,'' field_footer

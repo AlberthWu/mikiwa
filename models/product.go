@@ -497,6 +497,56 @@ func (t *Product) GetAllListRaw(keyword string) (m []SimpleProductRtn, err error
 	return m, err
 }
 
+func (t *Product) GetAllListWip(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 2 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllListFinishing(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 3 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllListAcc(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 4 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllListOthers(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 5 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllListRecycle(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 6 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
 func (t *Product) Document(id, user_id int, folder_name string) (m []DocumentRtn) {
 	var doc Document
 	m = doc.GetDocument(id, folder_name)
