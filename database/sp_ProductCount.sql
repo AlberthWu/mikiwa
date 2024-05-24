@@ -2,7 +2,7 @@ SET GLOBAL log_bin_trust_function_creators = 1;
 
 DROP PROCEDURE IF EXISTS sp_ProductCount;
 DELIMITER $$
-CREATE PROCEDURE sp_ProductCount(updatedAt date,uId int,divisionIds varchar(7),typeIds varchar(7),purchaseIds varchar(5),salesIds varchar(5),productionIds varchar(5),in statusId int,userId int, reportType int, keyword varchar(255), in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000),in limitVal int, in offsetVal int )
+CREATE PROCEDURE sp_ProductCount(updatedAt date,uId int,divisionIds varchar(7),typeIds varchar(7),purchaseIds varchar(5),salesIds varchar(5),productionIds varchar(5),statusIds varchar(5),userId int, reportType int, keyword varchar(255), in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000),in limitVal int, in offsetVal int )
 BEGIN
 	declare keywordSet varchar(8000);
     declare updatedAtSet   varchar(255);
@@ -49,7 +49,7 @@ BEGIN
 	SET ColumnSet = case when (ColumnSet is null or ColumnSet = '') then '' else ColumnSet end;
     
     SET uIdSet  = case when (uId is null  or uId = 0) then '' else concat(" and t0.id in (",uId,")")   end;
-    SET statusIdSet  = case when statusId is null  then '' else concat(" and t0.status_id in (",statusId,")")   end;
+    SET statusIdSet  = case when (statusIds is null or statusIds = '') then '' else concat(" and t0.status_id in (",replace(statusIds,'''',''),")") end ;
     SET updatedAtSet  = case when updatedAt is null  then '' else concat(" and (date(t0.created_at) = date('",updatedAt,"')  or date(ifnull(t0.updated_at,t0.created_at)) = date('",updatedAt,"'))")   end;
     set divisionIdSet = case when (divisionIds is null or divisionIds = '') then '' else concat(" AND t0.product_division_id in (",replace(divisionIds,'''',''),")") end ;
     set typeIdSet = case when (typeIds is null or typeIds = '') then '' else concat(" and (t0.product_type_id in (",replace(typeIds,'''',''),")") end ;
