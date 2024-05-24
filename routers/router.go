@@ -59,6 +59,8 @@ func init() {
 	beego.Router("/v1/product/list/acc", &master.ProductController{}, "get:GetAllListAcc")
 	beego.Router("/v1/product/list/others", &master.ProductController{}, "get:GetAllListOthers")
 	beego.Router("/v1/product/list/recycle", &master.ProductController{}, "get:GetAllListRecycle")
+	// image
+	beego.Router("/v1/product/document/:id", &master.ProductController{}, "post:PostDocument;get:GetDocument")
 	// uom
 	beego.Router("/v1/product/uom", &master.UomController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/product/uom/:id", &master.UomController{}, "put:Put;get:GetOne")

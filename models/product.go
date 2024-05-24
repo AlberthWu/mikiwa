@@ -222,6 +222,7 @@ type (
 		UomCode           string              `json:"uom_code"`
 		StatusId          int                 `json:"status_id"`
 		UomList           []ProductUomRtnJson `json:"uom"`
+		Document          []DocumentRtn       `json:"document"`
 	}
 
 	ProductUomRtnJson struct {
@@ -408,6 +409,7 @@ func (t *Uom) GetAllList(keyword string) (m []Uom, err error) {
 func (t *Product) GetById(id, user_id int) (m *ProductRtn, err error) {
 	o := orm.NewOrm()
 	var d Product
+	var doc Document
 	cond := orm.NewCondition()
 	cond1 := cond.And("deleted_at__isnull", true).And("id", id)
 	qs := Products().SetCond(cond1)
@@ -419,7 +421,8 @@ func (t *Product) GetById(id, user_id int) (m *ProductRtn, err error) {
 	var productdivision ProductDivisionRtn
 	o.Raw("select id,division_code,division_name from product_divisions where id  = " + utils.Int2String(d.ProductDivisionId) + " ").QueryRow(&productdivision)
 
-	dlist := d.GetDetail(id, user_id)
+	ulist := d.GetDetail(id, user_id)
+	dlist := doc.GetDocument(id, "product")
 
 	m = &ProductRtn{
 		Id:                d.Id,
@@ -432,7 +435,8 @@ func (t *Product) GetById(id, user_id int) (m *ProductRtn, err error) {
 		UomId:             d.UomId,
 		UomCode:           d.UomCode,
 		StatusId:          int(d.StatusId),
-		UomList:           dlist,
+		UomList:           ulist,
+		Document:          dlist,
 	}
 
 	return m, err
@@ -471,6 +475,12 @@ func (t *Product) GetAllDetail(keyword, field_name, match_mode, value_name strin
 		err = orm.ErrNoRows
 	}
 	return m, err
+}
+
+func (t *Product) Document(id, user_id int, folder_name string) (m []DocumentRtn) {
+	var doc Document
+	m = doc.GetDocument(id, folder_name)
+	return m
 }
 
 func (t *Product) GetAllList(keyword string) (m []Product, err error) {
