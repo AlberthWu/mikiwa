@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"mikiwa/utils"
 	"strconv"
 	"strings"
@@ -25,11 +26,11 @@ type (
 	}
 
 	ProductType struct {
-		Id              int    `json:"id" orm:"column(id);auto;pk"`
-		ProductTypeName string `json:"type_name" orm:"column(type_name)"`
-		IsPurchase      int8   `json:"is_purchase" orm:"column(is_purchase)"`
-		IsSales         int8   `json:"is_sales" orm:"column(is_sales)"`
-		IsProduction    int8   `json:"is_production" orm:"column(is_production)"`
+		Id           int    `json:"id" orm:"column(id);auto;pk"`
+		TypeName     string `json:"type_name" orm:"column(type_name)"`
+		IsPurchase   int8   `json:"is_purchase" orm:"column(is_purchase)"`
+		IsSales      int8   `json:"is_sales" orm:"column(is_sales)"`
+		IsProduction int8   `json:"is_production" orm:"column(is_production)"`
 	}
 
 	Product struct {
@@ -194,6 +195,46 @@ func (t *Product) CheckCode(id int, code string) bool {
 	return exist
 }
 
+type (
+	ProductTypeRtn struct {
+		Id           int    `json:"id"`
+		TypeName     string `json:"type_name"`
+		IsPurchase   int8   `json:"is_purchase"`
+		IsSales      int8   `json:"is_sales"`
+		IsProduction int8   `json:"is_production"`
+	}
+
+	ProductDivisionRtn struct {
+		Id           int    `json:"id"`
+		DivisionCode string `json:"division_code"`
+		DivisionName string `json:"division_name"`
+	}
+
+	ProductRtn struct {
+		Id                int                 `json:"id"`
+		ProductCode       string              `json:"product_code"`
+		ProductName       string              `json:"product_name"`
+		ProductTypeId     ProductTypeRtn      `json:"product_type_id"`
+		ProductDivisionId ProductDivisionRtn  `json:"product_division_id"`
+		SerialNumber      string              `json:"serial_number"`
+		LeadTime          int                 `json:"lead_time"`
+		UomId             int                 `json:"uom_id"`
+		UomCode           string              `json:"uom_code"`
+		StatusId          int                 `json:"status_id"`
+		UomList           []ProductUomRtnJson `json:"uom"`
+	}
+
+	ProductUomRtnJson struct {
+		ItemNo      int     `json:"item_no"`
+		ProductId   int     `json:"product_id"`
+		ProductCode string  `json:"product_code"`
+		UomId       int     `json:"uom_id"`
+		UomCode     string  `json:"uom_code"`
+		Ratio       float64 `json:"ratio"`
+		IsDefault   int8    `json:"is_default"`
+	}
+)
+
 func (t *ProductDivision) GetById(id int) (m *ProductDivision, err error) {
 	m = &ProductDivision{}
 	cond := orm.NewCondition()
@@ -230,6 +271,20 @@ func (t *ProductDivision) GetAll(keyword, field_name, match_mode, value_name str
 		err = orm.ErrNoRows
 	}
 	return utils.Pagination(c, p, size, details), err
+}
+
+func (t *ProductDivision) GetAllList(keyword string) (m []ProductDivision, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond = cond.AndCond(cond.Or("division_code__icontains", keyword).Or("division_name__icontains", keyword)).And("status_id", 1)
+
+	qs := ProductDivisions().SetCond(cond).OrderBy("division_code")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
 }
 
 func (t *ProductType) GetById(id int) (m *ProductType, err error) {
@@ -273,6 +328,31 @@ func (t *ProductType) GetAll(keyword, field_name, match_mode, value_name string,
 	return utils.Pagination(c, p, size, details), err
 }
 
+func (t *ProductType) GetAllList(keyword, is_purchase, is_sales, is_production string) (m []ProductType, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond = cond.And("type_name__icontains", keyword)
+	if is_purchase != "" {
+		cond = cond.And("is_purchase", is_purchase)
+	}
+
+	if is_sales != "" {
+		cond = cond.And("is_sales", is_sales)
+	}
+
+	if is_production != "" {
+		cond = cond.And("is_production", is_production)
+	}
+
+	qs := ProductTypes().SetCond(cond).OrderBy("type_name")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
 func (t *Uom) GetById(id int) (m *Uom, err error) {
 	m = &Uom{}
 	cond := orm.NewCondition()
@@ -311,10 +391,88 @@ func (t *Uom) GetAll(keyword, field_name, match_mode, value_name string, p, size
 	return utils.Pagination(c, p, size, details), err
 }
 
-func (t *Product) GetById(id, user_id int) (m *Product, err error) {
-	return nil, err
+func (t *Uom) GetAllList(keyword string) (m []Uom, err error) {
+	var num int64
+	cond := orm.NewCondition()
+	cond = cond.AndCond(cond.Or("uom_code__icontains", keyword).Or("uom_name__icontains", keyword)).And("status_id", 1)
+
+	qs := Uoms().SetCond(cond).OrderBy("uom_code")
+	num, err = qs.Limit(100).Offset(0).All(&m)
+
+	if num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
 }
-func (t *Product) GetAll(keyword, field_name, match_mode, value_name string, p, size int, is_sales, is_purchase, is_production string) (u utils.PageDynamic, err error) {
+
+func (t *Product) GetById(id, user_id int) (m *ProductRtn, err error) {
+	o := orm.NewOrm()
+	var d Product
+	cond := orm.NewCondition()
+	cond1 := cond.And("deleted_at__isnull", true).And("id", id)
+	qs := Products().SetCond(cond1)
+	err = qs.One(&d)
+
+	var producttype ProductTypeRtn
+	o.Raw("select id,type_name,is_purchase,is_sales,is_production from product_types where id  =" + utils.Int2String(d.ProductTypeId) + " ").QueryRow(&producttype)
+
+	var productdivision ProductDivisionRtn
+	o.Raw("select id,division_code,division_name from product_divisions where id  = " + utils.Int2String(d.ProductDivisionId) + " ").QueryRow(&productdivision)
+
+	dlist := d.GetDetail(id, user_id)
+
+	m = &ProductRtn{
+		Id:                d.Id,
+		ProductCode:       d.ProductCode,
+		ProductName:       d.ProductName,
+		ProductTypeId:     producttype,
+		ProductDivisionId: productdivision,
+		SerialNumber:      d.SerialNumber,
+		LeadTime:          d.LeadTime,
+		UomId:             d.UomId,
+		UomCode:           d.UomCode,
+		StatusId:          int(d.StatusId),
+		UomList:           dlist,
+	}
+
+	return m, err
+}
+
+func (c *Product) GetDetail(id, user_id int) (m []ProductUomRtnJson) {
+	o := orm.NewOrm()
+	o.Raw("call sp_Product(null," + utils.Int2String(id) + ",'','','','','',null," + utils.Int2String(user_id) + ",0,'',null,null,null,null, null)").QueryRows(&m)
+	return m
+}
+
+func (t *Product) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, status_id, user_id int, division_ids, type_ids, production_ids, purchase_ids, sales_ids string, updated_at *string) (u utils.PageDynamic, err error) {
+	o := orm.NewOrm()
+	var m []orm.Params
 	var c int
-	return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", nil), err
+
+	o.Raw("call sp_ProductCount(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",1,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &updated_at).QueryRow(&c)
+
+	if allsize == 1 && c > 0 {
+		size = c
+	}
+	_, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",1,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &updated_at).Values(&m)
+
+	if c == 0 && err == nil {
+		err = orm.ErrNoRows
+		return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
+	}
+
+	return utils.PaginationDynamic(int(c), p, size, fmt.Sprintf("%v", m[0]["field_key"]), fmt.Sprintf("%v", m[0]["field_label"]), fmt.Sprintf("%v", m[0]["field_int"]), fmt.Sprintf("%v", m[0]["field_level"]), fmt.Sprintf("%v", m[0]["field_export"]), fmt.Sprintf("%v", m[0]["field_export_label"]), fmt.Sprintf("%v", m[0]["field_footer"]), m), err
+}
+
+func (t *Product) GetAllDetail(keyword, field_name, match_mode, value_name string, status_id, user_id int, division_ids, type_ids, production_ids, purchase_ids, sales_ids string, updated_at *string) (m []orm.Params, err error) {
+	o := orm.NewOrm()
+	var num int64
+	if num, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",0,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null, null)", &updated_at).Values(&m); num == 0 {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllList(keyword string) (m []Product, err error) {
+	return nil, err
 }
