@@ -170,6 +170,7 @@ func (c *UomController) Put() {
 }
 
 func (c *UomController) Delete() {}
+
 func (c *UomController) GetOne() {
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	v, err := t_uom.GetById(id)

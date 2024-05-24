@@ -234,6 +234,16 @@ type (
 		Ratio       float64 `json:"ratio"`
 		IsDefault   int8    `json:"is_default"`
 	}
+
+	SimpleProductRtn struct {
+		Id           int    `json:"id"`
+		ProductCode  string `json:"product_code"`
+		ProductName  string `json:"product_name"`
+		SerialNumber string `json:"serial_number"`
+		LeadTime     int    `json:"lead_time"`
+		UomId        int    `json:"uom_id"`
+		UomCode      string `json:"uom_code"`
+	}
 )
 
 func (t *ProductDivision) GetById(id int) (m *ProductDivision, err error) {
@@ -282,7 +292,7 @@ func (t *ProductDivision) GetAllList(keyword string) (m []ProductDivision, err e
 	qs := ProductDivisions().SetCond(cond).OrderBy("division_code")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -348,7 +358,7 @@ func (t *ProductType) GetAllList(keyword, is_purchase, is_sales, is_production s
 	qs := ProductTypes().SetCond(cond).OrderBy("type_name")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -400,7 +410,7 @@ func (t *Uom) GetAllList(keyword string) (m []Uom, err error) {
 	qs := Uoms().SetCond(cond).OrderBy("uom_code")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -471,7 +481,17 @@ func (t *Product) GetAll(keyword, field_name, match_mode, value_name string, p, 
 func (t *Product) GetAllDetail(keyword, field_name, match_mode, value_name string, status_id, user_id int, division_ids, type_ids, production_ids, purchase_ids, sales_ids string, updated_at *string) (m []orm.Params, err error) {
 	o := orm.NewOrm()
 	var num int64
-	if num, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",0,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null, null)", &updated_at).Values(&m); num == 0 {
+	if num, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",0,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null, null)", &updated_at).Values(&m); num == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllListRaw(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 1 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -481,8 +501,4 @@ func (t *Product) Document(id, user_id int, folder_name string) (m []DocumentRtn
 	var doc Document
 	m = doc.GetDocument(id, folder_name)
 	return m
-}
-
-func (t *Product) GetAllList(keyword string) (m []Product, err error) {
-	return nil, err
 }

@@ -700,7 +700,23 @@ func (c *ProductController) GetDocument() {
 	c.ServeJSON()
 }
 
-func (c *ProductController) GetAllListRaw() {}
+func (c *ProductController) GetAllListRaw() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_product.GetAllListRaw(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
 
 func (c *ProductController) GetAllListWip() {}
 

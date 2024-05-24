@@ -523,7 +523,7 @@ func (t *PettyCashHeader) GetVoucher(keyword, field_name, match_mode, value_name
 	var num int64
 
 	num, err = o.Raw("call sp_PettyCashReport(?,?,"+utils.Int2String(voucher_id)+","+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(status_id)+","+utils.Int2String(status_gl_id)+","+utils.Int2String(user_id)+","+utils.Int2String(report_grup)+","+utils.Int2String(report_type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_nameTop+"','"+field_name+"','"+match_mode+"','"+value_name+"', null,null)", &issue_date, &issue_date2).QueryRows(&m)
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err

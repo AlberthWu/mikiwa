@@ -310,7 +310,7 @@ func (t *GlAccountType) GetAllList(keyword, component_account string) (m []GlAcc
 	qs := GlAccountTypes().SetCond(cond).OrderBy("id")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -325,7 +325,7 @@ func (t *GlAccountType) GetAllListAsset(keyword string) (m []GlAccountType, err 
 	qs = qs.SetCond(cond2).OrderBy("id")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -340,7 +340,7 @@ func (t *GlAccountType) GetAllListExpenses(keyword string) (m []GlAccountType, e
 	qs = qs.SetCond(cond2).OrderBy("id")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -355,7 +355,7 @@ func (t *GlAccountType) GetAllListLiability(keyword string) (m []GlAccountType, 
 	qs = qs.SetCond(cond2).OrderBy("id")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -370,7 +370,7 @@ func (t *GlAccountType) GetAllListEquity(keyword string) (m []GlAccountType, err
 	qs = qs.SetCond(cond2).OrderBy("id")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -385,7 +385,7 @@ func (t *GlAccountType) GetAllListRevenue(keyword string) (m []GlAccountType, er
 	qs = qs.SetCond(cond2).OrderBy("id")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
@@ -400,7 +400,7 @@ func (t *GlAccountType) GetAllListCogs(keyword string) (m []GlAccountType, err e
 	qs = qs.SetCond(cond2).OrderBy("id")
 	num, err = qs.Limit(100).Offset(0).All(&m)
 
-	if num == 0 {
+	if num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err
