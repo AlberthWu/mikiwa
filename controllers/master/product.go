@@ -6,6 +6,7 @@ import (
 	base "mikiwa/controllers"
 	"mikiwa/models"
 	"mikiwa/utils"
+	"mime/multipart"
 	"strconv"
 	"strings"
 
@@ -644,6 +645,61 @@ func (c *ProductController) GetDetail() {
 	}
 	c.ServeJSON()
 }
+
+func (c *ProductController) PostDocument() {
+	var user_id, form_id int
+	var user_name string
+	var folderName string = "product"
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+		user_name = sess.(map[string]interface{})["username"].(string)
+	}
+	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
+	write_aut = true
+	if !write_aut {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		c.ServeJSON()
+		return
+	}
+
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	upload_file, err := c.GetFiles("upload_file")
+	code, message := base.DecodeErr(err)
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		for _, fileHeader := range upload_file {
+			if err := base.PostFilesToFirebase([]*multipart.FileHeader{fileHeader}, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
+				c.Ctx.ResponseWriter.WriteHeader(401)
+				utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error while posting files to Firebase: %s", err.Error()))
+				c.ServeJSON()
+				return
+			}
+		}
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Sucess", "File uploaded")
+	}
+	c.ServeJSON()
+}
+
+func (c *ProductController) GetDocument() {
+	var user_id int
+	var folderName string = "product"
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	v := t_product.Document(id, user_id, folderName)
+
+	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Sucess", v)
+
+	c.ServeJSON()
+}
+
 func (c *ProductController) GetAllListRaw() {}
 
 func (c *ProductController) GetAllListWip() {}
