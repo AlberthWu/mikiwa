@@ -458,17 +458,17 @@ func (c *Product) GetDetail(id, user_id int) (m []ProductUomRtnJson) {
 	return m
 }
 
-func (t *Product) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, status_id, user_id int, division_ids, type_ids, production_ids, purchase_ids, sales_ids string, updated_at *string) (u utils.PageDynamic, err error) {
+func (t *Product) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id int, division_ids, type_ids, production_ids, purchase_ids, sales_ids, status_ids string, updated_at *string) (u utils.PageDynamic, err error) {
 	o := orm.NewOrm()
 	var m []orm.Params
 	var c int
 
-	o.Raw("call sp_ProductCount(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",1,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &updated_at).QueryRow(&c)
+	o.Raw("call sp_ProductCount(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"','"+status_ids+"',"+utils.Int2String(user_id)+",1,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &updated_at).QueryRow(&c)
 
 	if allsize == 1 && c > 0 {
 		size = c
 	}
-	_, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",1,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &updated_at).Values(&m)
+	_, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"','"+status_ids+"',"+utils.Int2String(user_id)+",1,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &updated_at).Values(&m)
 
 	if c == 0 && err == nil {
 		err = orm.ErrNoRows
@@ -478,10 +478,10 @@ func (t *Product) GetAll(keyword, field_name, match_mode, value_name string, p, 
 	return utils.PaginationDynamic(int(c), p, size, fmt.Sprintf("%v", m[0]["field_key"]), fmt.Sprintf("%v", m[0]["field_label"]), fmt.Sprintf("%v", m[0]["field_int"]), fmt.Sprintf("%v", m[0]["field_level"]), fmt.Sprintf("%v", m[0]["field_export"]), fmt.Sprintf("%v", m[0]["field_export_label"]), fmt.Sprintf("%v", m[0]["field_footer"]), m), err
 }
 
-func (t *Product) GetAllDetail(keyword, field_name, match_mode, value_name string, status_id, user_id int, division_ids, type_ids, production_ids, purchase_ids, sales_ids string, updated_at *string) (m []orm.Params, err error) {
+func (t *Product) GetAllDetail(keyword, field_name, match_mode, value_name string, user_id int, division_ids, type_ids, production_ids, purchase_ids, sales_ids, status_ids string, updated_at *string) (m []orm.Params, err error) {
 	o := orm.NewOrm()
 	var num int64
-	if num, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"',"+utils.Int2String(status_id)+","+utils.Int2String(user_id)+",0,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null, null)", &updated_at).Values(&m); num == 0 && err == nil {
+	if num, err = o.Raw("call sp_Product(?,0,'"+division_ids+"','"+type_ids+"','"+purchase_ids+"','"+sales_ids+"','"+production_ids+"','"+status_ids+"',"+utils.Int2String(user_id)+",0,'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null, null)", &updated_at).Values(&m); num == 0 && err == nil {
 		err = orm.ErrNoRows
 	}
 	return m, err

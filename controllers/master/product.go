@@ -556,7 +556,7 @@ func (c *ProductController) GetAll() {
 	field_name := strings.TrimSpace(c.GetString("field_name"))
 	allsize, _ := c.GetInt("allsize")
 
-	status_id, _ := c.GetInt("status_id")
+	status_ids := strings.TrimSpace(c.GetString("status_ids"))
 	updated_at := strings.TrimSpace(c.GetString("updated_at"))
 	purchase_ids := strings.TrimSpace(c.GetString("purchase_ids"))
 	sales_ids := strings.TrimSpace(c.GetString("sales_ids"))
@@ -571,7 +571,7 @@ func (c *ProductController) GetAll() {
 		updatedat = &updated_at
 	}
 
-	d, err := t_product.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, status_id, user_id, division_ids, type_ids, production_ids, purchase_ids, sales_ids, updatedat)
+	d, err := t_product.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, division_ids, type_ids, production_ids, purchase_ids, sales_ids, status_ids, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -599,7 +599,7 @@ func (c *ProductController) GetDetail() {
 	value_name := strings.TrimSpace(c.GetString("value_name"))
 	field_name := strings.TrimSpace(c.GetString("field_name"))
 
-	status_id, _ := c.GetInt("status_id")
+	status_ids := strings.TrimSpace(c.GetString("status_ids"))
 	updated_at := strings.TrimSpace(c.GetString("updated_at"))
 	purchase_ids := strings.TrimSpace(c.GetString("purchase_ids"))
 	sales_ids := strings.TrimSpace(c.GetString("sales_ids"))
@@ -614,7 +614,7 @@ func (c *ProductController) GetDetail() {
 		updatedat = &updated_at
 	}
 
-	d, err := t_product.GetAllDetail(keyword, field_name, match_mode, value_name, status_id, user_id, division_ids, type_ids, production_ids, purchase_ids, sales_ids, updatedat)
+	d, err := t_product.GetAllDetail(keyword, field_name, match_mode, value_name, user_id, division_ids, type_ids, production_ids, purchase_ids, sales_ids, status_ids, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
