@@ -137,15 +137,14 @@ func (c *ProductTypeController) Put() {
 	t_product_type.IsPurchase = is_purchase
 	t_product_type.IsSales = is_sales
 	t_product_type.IsProduction = is_production
-
-	d, err_ := t_product_type.Insert(t_product_type)
+	err_ := t_product_type.Update()
 	errcode, errmessage := base.DecodeErr(err_)
 
 	if err_ != nil {
 		c.Ctx.ResponseWriter.WriteHeader(errcode)
 		utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
 	} else {
-		v, err := t_product_type.GetById(d.Id)
+		v, err := t_product_type.GetById(id)
 		errcode, errmessage := base.DecodeErr(err)
 		if err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(errcode)
