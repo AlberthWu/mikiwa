@@ -57,7 +57,7 @@ BEGIN
     set salesIdSet = case when (salesIds is null or salesIds = '') then '' else concat(" AND t1.is_sales in (",replace(salesIds,'''',''),")") end ;
     set productionIdSet = case when (productionIds is null or productionIds = '') then '' else concat(" AND t1.is_production in (",replace(productionIds,'''',''),")") end ;
     SET keywordSet  = case when (keyword is null or keyword = '') then '' else concat(" and (t0.product_code like '%",keyword,"%'  or t0.product_name like '%",keyword,"%' or t0.product_division_code like '%",keyword,"%' or t0.product_division_name like '%",keyword,"%' 
-		 or t0.product_type_name like '%",keyword,"%'   or t0.product_uom_code like '%",keyword,"%')")   end;
+		 or t0.product_type_name like '%",keyword,"%'   or t0.uom_code like '%",keyword,"%')")   end;
    
     SET limitSet = case when LimitVal is null then '' else concat(" limit ",limitVal)    end;
     set offsetSet = case when OffsetVal is null then '' else concat(" offset ",offsetVal)    end ;

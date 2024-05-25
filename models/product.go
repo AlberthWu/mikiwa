@@ -176,7 +176,7 @@ func (t *Product) Update(fields ...string) error {
 }
 
 func (t *Uom) CheckCode(id int, uom string) bool {
-	exist := ProductTypes().Exclude("id", id).Filter("uom_code", uom).Exist()
+	exist := Uoms().Exclude("id", id).Filter("uom_code", uom).Exist()
 	return exist
 }
 
