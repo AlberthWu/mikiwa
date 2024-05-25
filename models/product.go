@@ -158,6 +158,7 @@ func (t *ProductType) Update(fields ...string) error {
 	}
 	return nil
 }
+
 func (t *Product) Insert(m Product) (*Product, error) {
 	o := orm.NewOrm()
 
@@ -472,6 +473,8 @@ func (t *Product) GetAll(keyword, field_name, match_mode, value_name string, p, 
 
 	if c == 0 && err == nil {
 		err = orm.ErrNoRows
+		return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
+	} else if err != nil {
 		return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
 	}
 

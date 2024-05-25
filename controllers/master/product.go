@@ -576,7 +576,7 @@ func (c *ProductController) GetAll() {
 	if err == orm.ErrNoRows {
 		code = 200
 		c.Ctx.ResponseWriter.WriteHeader(code)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", d)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
 	} else if err != nil {
 		c.Ctx.ResponseWriter.WriteHeader(code)
 		utils.ReturnHTTPError(&c.Controller, code, message)
@@ -659,7 +659,7 @@ func (c *ProductController) PostDocument() {
 	write_aut = true
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}
