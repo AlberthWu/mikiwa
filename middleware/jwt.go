@@ -21,7 +21,7 @@ func Jwt(ctx *context.Context) {
 
 	var access_token string
 
-	if ctx.Input.Header("Authorization") == "" {
+	if ctx.Input.Header("authorize") == "" {
 		ctx.Output.SetStatus(403)
 		resBody, err := json.Marshal(ResponseRtn{403, "You are not logged in"})
 		ctx.Output.Body(resBody)
@@ -32,16 +32,16 @@ func Jwt(ctx *context.Context) {
 		return
 	}
 
-	authorizationHeader := ctx.Request.Header.Get("Authorization")
-	fields := strings.Fields(authorizationHeader)
+	authorizeHeader := ctx.Request.Header.Get("authorize")
+	fields := strings.Fields(authorizeHeader)
 
-	var tokenString string = ctx.Input.Header("Authorization")
-	authorization := strings.Split(tokenString, "Bearer ")
+	var tokenString string = ctx.Input.Header("authorize")
+	authorize := strings.Split(tokenString, "Bearer ")
 
 	if len(fields) != 0 && fields[0] == "Bearer" {
 		access_token = fields[1]
 	} else {
-		access_token = authorization[1]
+		access_token = authorize[1]
 	}
 
 	if access_token == "" {

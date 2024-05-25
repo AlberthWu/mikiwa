@@ -43,8 +43,8 @@ func EnableCors() {
 	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type", "x-xsrf-token", "AxiosHeaders", "X-Requested-With", "X-CSRF-Token", "Accept"},
-		ExposeHeaders:    []string{"Content-Length", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type", "Authorization", "Set-Cookie", "Cookie"},
+		AllowHeaders:     []string{"Origin", "authorize", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type", "x-xsrf-token", "AxiosHeaders", "X-Requested-With", "X-CSRF-Token", "Accept"},
+		ExposeHeaders:    []string{"Content-Length", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type", "authorize", "Set-Cookie", "Cookie"},
 		AllowCredentials: true,
 	}))
 }

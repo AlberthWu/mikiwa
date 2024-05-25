@@ -30,7 +30,7 @@ func (c *ProductDivisionController) Post() {
 	write_aut = true
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}
@@ -100,7 +100,7 @@ func (c *ProductDivisionController) Put() {
 	put_aut = true
 	if !put_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}

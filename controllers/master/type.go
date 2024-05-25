@@ -30,7 +30,7 @@ func (c *ProductTypeController) Post() {
 	write_aut = true
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}
@@ -100,7 +100,7 @@ func (c *ProductTypeController) Put() {
 	put_aut = true
 	if !put_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}
@@ -195,6 +195,7 @@ func (c *ProductTypeController) GetAll() {
 
 	d, err := t_product_type.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, is_purchase, is_sales, is_production)
 	code, message := base.DecodeErr(err)
+
 	if err == orm.ErrNoRows {
 		code = 200
 		c.Ctx.ResponseWriter.WriteHeader(code)

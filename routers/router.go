@@ -103,7 +103,39 @@ func init() {
 	beego.Router("/v1/finance/report/pettycash/voucher/:id", &finance.FinanceReportController{}, "get:ReportVoucher")
 
 	// companies
-	// internal
-	beego.Router("/v1/internal/list", &master.CompanyController{}, "get:GetAllInternalList")
+	// list
+	beego.Router("/v1/internal/list", &master.CompanyController{}, "get:GetAllListInternal")
+	beego.Router("/v1/customer/list", &master.CompanyController{}, "get:GetAllListCustomer")
+	beego.Router("/v1/customerothers/list", &master.CompanyController{}, "get:GetAllListCustOthers")
+	beego.Router("/v1/warehouse/list", &master.CompanyController{}, "get:GetAllListWarehouse")
+	beego.Router("/v1/sparepart/list", &master.CompanyController{}, "get:GetAllListSparepart")
+	beego.Router("/v1/transporter/list", &master.CompanyController{}, "get:GetAllListTransporter")
+	beego.Router("/v1/goods/list", &master.CompanyController{}, "get:GetAllListGoods")
+	beego.Router("/v1/supplierothers/list", &master.CompanyController{}, "get:GetAllListSuppOthers")
+	beego.Router("/v1/insurance/list", &master.CompanyController{}, "get:GetAllListInsurance")
+
+	// getAll
+	beego.Router("/v1/internal", &master.CompanyController{}, "get:GetAllInternal")
+	beego.Router("/v1/customer", &master.CompanyController{}, "get:GetAllCustomer")
+	beego.Router("/v1/customerothers", &master.CompanyController{}, "get:GetAllCustOthers")
+	beego.Router("/v1/warehouse", &master.CompanyController{}, "get:GetAllWarehouse")
+	beego.Router("/v1/sparepart", &master.CompanyController{}, "get:GetAllSparepart")
+	beego.Router("/v1/transporter", &master.CompanyController{}, "get:GetAllTransporter")
+	beego.Router("/v1/goods", &master.CompanyController{}, "get:GetAllGoods")
+	beego.Router("/v1/supplierothers", &master.CompanyController{}, "get:GetAllSuppOthers")
+	beego.Router("/v1/insurance", &master.CompanyController{}, "get:GetAllInsurance")
+
+	// crud
+	beego.Router("/v1/company", &master.CompanyController{}, "post:Post")
+	beego.Router("/v1/company/:id", &master.CompanyController{}, "put:Put;get:GetOne;delete:Delete")
+
+	// // customer_types
+	// beego.Router("/v1/companytypes", &master.CompanyController{}, "get:GetAll")
+
+	// // cities
+	// beego.Router("/v1/city/list", &master.CompanyController{}, "get:GetAll")
+
+	// // banks
+	// beego.Router("/v1/bank", &master.CompanyController{}, "get:GetAll")
 
 }

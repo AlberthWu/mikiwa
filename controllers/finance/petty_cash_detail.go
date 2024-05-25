@@ -413,7 +413,7 @@ func (c *PettyCashController) CheckDelete() {
 	delete_aut := models.CheckPrivileges(user_id, form_id, 12)
 	if !delete_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Delete detail not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Delete detail not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}

@@ -39,7 +39,7 @@ func (c *CoaController) Post() {
 	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}
@@ -240,7 +240,7 @@ func (c *CoaController) Put() {
 	put_aut := models.CheckPrivileges(user_id, form_id, base.Update)
 	if !put_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}
@@ -464,7 +464,7 @@ func (c *CoaController) Delete() {
 	delete_aut := models.CheckPrivileges(user_id, form_id, base.Delete)
 	if !delete_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Delete not authorization", map[string]interface{}{"message": "Please contact administrator"})
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Delete not authorize", map[string]interface{}{"message": "Please contact administrator"})
 		c.ServeJSON()
 		return
 	}
