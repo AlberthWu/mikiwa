@@ -43,6 +43,7 @@ type (
 		UpdatedAt       time.Time       `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
 		DeletedAt       time.Time       `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
 		CompanyTypes    []*CompanyTypes `json:"-" orm:"reverse(many);rel_through(mikiwa/models.CompanyCompanyType)"`
+		BusinessUnit    []*BusinessUnit `json:"-" orm:"reverse(many);rel_through(mikiwa/models.CompanyBusinessUnit)"`
 	}
 
 	Plant struct {
@@ -171,6 +172,7 @@ type (
 		BankBranch      string         `json:"bank_branch"`
 		Plant           []PlantRtnJson `json:"plant"`
 		CompanyType     []CompanyTy    `json:"company_type"`
+		BusinessUnit    []CompanyBu    `json:"business_unit"`
 	}
 
 	CompanyDetailReturn struct {
@@ -203,6 +205,7 @@ type (
 		BankBranch      string         `json:"bank_branch"`
 		Plant           []PlantRtnJson `json:"plant"`
 		CompanyType     []CompanyTy    `json:"company_type"`
+		BusinessUnit    []CompanyBu    `json:"business_unit"`
 	}
 
 	PlantRtnJson struct {
@@ -216,6 +219,15 @@ type (
 		IsReceipt   int8   `json:"is_receipt"`
 		PriceMethod int8   `json:"price_method"`
 		Status      int8   `json:"status"`
+		CompanyId   int    `json:"company_id"`
+		FullName    string `json:"full_name"`
+	}
+
+	SimplePlantRtnJson struct {
+		Id        int    `json:"id"`
+		Name      string `json:"name"`
+		FullName  string `json:"full_name"`
+		CompanyId int    `json:"company_id"`
 	}
 )
 
@@ -252,6 +264,8 @@ func (t *Company) GetById(id, user_id int) (m *CompanyDetailReturn, err error) {
 			IsPo:       plantval.IsPo,
 			IsSchedule: plantval.IsSchedule,
 			IsReceipt:  plantval.IsReceipt,
+			CompanyId:  id,
+			FullName:   companies.Code + " - " + plantval.Name,
 		})
 	}
 
@@ -264,6 +278,8 @@ func (t *Company) GetById(id, user_id int) (m *CompanyDetailReturn, err error) {
 		OrderBy("cts.position")
 	sql := qb.String()
 	o.Raw(sql).QueryRows(&companyty)
+
+	blist := t.GetDetailBu(id)
 
 	m = &CompanyDetailReturn{
 		Id:              companies.Id,
@@ -294,29 +310,31 @@ func (t *Company) GetById(id, user_id int) (m *CompanyDetailReturn, err error) {
 		BankAccountName: companies.BankAccountName,
 		BankBranch:      companies.BankBranch,
 		Plant:           plantrtn,
-		CompanyType:     companyty}
+		CompanyType:     companyty,
+		BusinessUnit:    blist}
 
 	return m, err
 }
 
-func (t *Company) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, company_type int, updated_at *string) (u utils.Page, err error) {
+func (t *Company) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, company_type int, status_ids string, updated_at *string) (u utils.Page, err error) {
 	o := orm.NewOrm()
 	var querydata []CompanyDetailRtnJson
 
 	var m []CompanyDetailRtnJson
 	var c int
 
-	o.Raw("call sp_CompanyCount(?,"+utils.Int2String(company_type)+","+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &updated_at).QueryRow(&c)
+	o.Raw("call sp_CompanyCount(?,0,"+utils.Int2String(company_type)+",'"+status_ids+"',"+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &updated_at).QueryRow(&c)
 
 	if allsize == 1 && c > 0 {
 		size = c
 	}
 
-	_, err = o.Raw("call sp_Company(?,"+utils.Int2String(company_type)+","+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &updated_at).QueryRows(&m)
+	_, err = o.Raw("call sp_Company(?,0,"+utils.Int2String(company_type)+",'"+status_ids+"',"+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &updated_at).QueryRows(&m)
 
 	for _, val := range m {
 		clist := t.GetDetailCt(val.Id)
 		olist := t.GetDetail(val.Id)
+		blist := t.GetDetailBu(val.Id)
 		querydata = append(querydata, CompanyDetailRtnJson{
 			Id:              val.Id,
 			Parent:          val.Parent,
@@ -347,6 +365,7 @@ func (t *Company) GetAll(keyword, field_name, match_mode, value_name string, p, 
 			BankBranch:      val.BankBranch,
 			Plant:           olist,
 			CompanyType:     clist,
+			BusinessUnit:    blist,
 		})
 	}
 
@@ -359,13 +378,19 @@ func (t *Company) GetAll(keyword, field_name, match_mode, value_name string, p, 
 
 func (c *Company) GetDetail(id int) (m []PlantRtnJson) {
 	o := orm.NewOrm()
-	o.Raw("select id,name,pic,address,is_do,is_po,is_schedule,is_receipt,price_method,status from plants where deleted_at is null and company_id = " + utils.Int2String(id) + ")").QueryRows(&m)
+	o.Raw("select t0.id,name,pic,address,is_do,is_po,is_schedule,is_receipt,price_method,status,company_id,concat(t1.code,' - ',t0.name) full_name from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(id) + "").QueryRows(&m)
 	return m
 }
 
 func (c *Company) GetDetailCt(id int) (m []CompanyTy) {
 	o := orm.NewOrm()
 	o.Raw("select id,name from company_types where id in (select type_id from company_type where company_id = " + utils.Int2String(id) + ")").QueryRows(&m)
+	return m
+}
+
+func (c *Company) GetDetailBu(id int) (m []CompanyBu) {
+	o := orm.NewOrm()
+	o.Raw("select id,business_unit_code,business_unit_name from business_units where id in (select business_unit_id from company_business_unit where company_id = " + utils.Int2String(id) + ")").QueryRows(&m)
 	return m
 }
 
@@ -399,4 +424,28 @@ func (t *Company) GetAllList(keyword string, company_type int) (m []CompanyListR
 		return companylist, errors.New("no data")
 	}
 	return companylist, err
+}
+
+func (t *Plant) GetById(id int) (m *Plant, err error) {
+	m = &Plant{}
+	cond := orm.NewCondition()
+	cond1 := cond.And("id", id).And("deleted_at__isnull", true)
+	qs := Plants().SetCond(cond1)
+
+	if err = qs.One(m); err != nil {
+		return nil, err
+	}
+	return m, err
+}
+
+func (t *Plant) GetAllList(company_id int, keyword string) (m []SimplePlantRtnJson, err error) {
+	o := orm.NewOrm()
+	var num int64
+	num, err = o.Raw("select * from (select id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(company_id) + ") x where full_name like '%" + keyword + "%' ").QueryRows(&m)
+
+	if num == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+
+	return m, err
 }

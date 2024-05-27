@@ -16,6 +16,11 @@ type UomController struct {
 	base.BaseController
 }
 
+func (c *UomController) Prepare() {
+	c.Ctx.Request.Header.Set("token", "No Aut")
+	c.BaseController.Prepare()
+}
+
 func (c *UomController) Post() {
 	var user_id, form_id int
 	fmt.Print("Check :", user_id, form_id, "..")
