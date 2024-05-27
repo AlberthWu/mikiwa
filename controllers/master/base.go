@@ -17,12 +17,19 @@ var form_product_division = "product_division"
 var form_product_type = "product_type"
 var form_uom = "uom"
 var form_customer = "customer"
+var form_plant = "plant"
 
 var t_product models.Product
 var t_product_type models.ProductType
 var t_product_division models.ProductDivision
 var t_uom models.Uom
 var t_company models.Company
+var t_business_unit models.BusinessUnit
+var t_company_business_unit models.CompanyBusinessUnit
+var t_plant models.Plant
+var t_bank models.Bank
+var t_city models.City
+var t_company_type models.CompanyTypes
 
 type DeleteBody struct {
 	Id string `json:"id"`

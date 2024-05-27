@@ -18,6 +18,11 @@ type ProductController struct {
 	base.BaseController
 }
 
+func (c *ProductController) Prepare() {
+	c.Ctx.Request.Header.Set("token", "No Aut")
+	c.BaseController.Prepare()
+}
+
 type (
 	InputHeaderProduct struct {
 		ProductCode      string               `json:"product_code"`

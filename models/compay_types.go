@@ -46,6 +46,14 @@ func (t *CompanyTypes) Update(fields ...string) error {
 	return nil
 }
 
+type (
+	CompanyTypeRtnJson struct {
+		Id        int    `json:"id"`
+		Name      string `json:"name"`
+		AliasName string `json:"alias_name"`
+	}
+)
+
 func (t *CompanyTypes) GetAll(keyword string, p, size int) (u utils.Page, err error) {
 
 	var ctypes []CompanyTypes
@@ -57,4 +65,15 @@ func (t *CompanyTypes) GetAll(keyword string, p, size int) (u utils.Page, err er
 	_, err = qs.RelatedSel().Limit(size).Offset((p - 1) * size).All(&ctypes)
 	c, _ := strconv.Atoi(strconv.FormatInt(count, 10))
 	return utils.Pagination(c, p, size, ctypes), err
+}
+
+func (t *CompanyTypes) GetAllList(keyword string) (m []CompanyTypeRtnJson, err error) {
+	o := orm.NewOrm()
+	var num int64
+	num, err = o.Raw("select id,`name`,alias_name from company_types where `name` like '%" + keyword + "%'").QueryRows(&m)
+
+	if num == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
 }

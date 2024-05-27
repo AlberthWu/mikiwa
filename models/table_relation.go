@@ -18,6 +18,12 @@ type (
 		CompanyId *Company      `json:"company_id" orm:"column(company_id);rel(fk);null"`
 		TypeId    *CompanyTypes `json:"type_id" orm:"column(type_id);rel(fk);null"`
 	}
+
+	CompanyBusinessUnit struct {
+		Id             int           `json:"-" orm:"null"`
+		CompanyId      *Company      `json:"company_id" orm:"column(company_id);rel(fk);null"`
+		BusinessUnitId *BusinessUnit `json:"business_unit_id" orm:"column(business_unit_id);rel(fk);null"`
+	}
 )
 
 func (t *SysRolePermission) TableName() string {
@@ -36,31 +42,28 @@ func CompanyCompanyTypes() orm.QuerySeter {
 	return orm.NewOrm().QueryTable(new(CompanyCompanyType))
 }
 
+func (t *CompanyBusinessUnit) TableName() string {
+	return "company_business_unit"
+}
+
+func CompanyBusinessUnits() orm.QuerySeter {
+	return orm.NewOrm().QueryTable(new(CompanyBusinessUnit))
+}
+
 func init() {
-	orm.RegisterModel(new(SysRolePermission), new(CompanyCompanyType))
-}
-
-func (t *CompanyCompanyType) Insert(m CompanyCompanyType) (*CompanyCompanyType, error) {
-	o := orm.NewOrm()
-
-	if _, err := o.Insert(&m); err != nil {
-		return nil, err
-	}
-	return &m, nil
-}
-
-func (t *CompanyCompanyType) Update(fields ...string) error {
-	o := orm.NewOrm()
-	if _, err := o.Update(t, fields...); err != nil {
-		return err
-	}
-	return nil
+	orm.RegisterModel(new(SysRolePermission), new(CompanyCompanyType), new(CompanyBusinessUnit))
 }
 
 type (
 	CompanyTy struct {
 		TypeId int    `json:"id"`
 		Name   string `json:"name"`
+	}
+
+	CompanyBu struct {
+		Id               int    `json:"id"`
+		BusinessUnitCode string `json:"business_unit_code"`
+		BusinessUnitName string `json:"business_unit_name"`
 	}
 )
 
@@ -83,6 +86,31 @@ func InsertCType(id int, company_type string) (int64, error) {
 
 	m2m := o.QueryM2M(&companies, "CompanyTypes")
 	num, err := m2m.Add(companytypes)
+	if err != nil {
+		return 0, err
+	} else {
+		return num, err
+	}
+}
+
+func (t *CompanyBusinessUnit) InsertM2M(id int, business_type string) (int64, error) {
+
+	o := orm.NewOrm()
+	companies := Company{Id: id}
+	o.Read(&companies)
+
+	sql := "delete from company_business_unit where company_id =?"
+	if _, err := o.Raw(sql, id).Exec(); err != nil {
+		return 0, err
+	}
+
+	idArrays := strings.Split(business_type, ",")
+
+	var businessUnit []BusinessUnit
+	BusinessUnits().Filter("id__in", idArrays).All(&businessUnit)
+
+	m2m := o.QueryM2M(&companies, "BusinessUnit")
+	num, err := m2m.Add(businessUnit)
 	if err != nil {
 		return 0, err
 	} else {

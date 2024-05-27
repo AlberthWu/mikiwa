@@ -16,6 +16,11 @@ type ProductDivisionController struct {
 	base.BaseController
 }
 
+func (c *ProductDivisionController) Prepare() {
+	c.Ctx.Request.Header.Set("token", "No Aut")
+	c.BaseController.Prepare()
+}
+
 func (c *ProductDivisionController) Post() {
 	var user_id, form_id int
 	fmt.Print("Check :", user_id, form_id, "..")
