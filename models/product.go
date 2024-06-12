@@ -56,12 +56,15 @@ type (
 	}
 
 	ProductUom struct {
-		Id        int     `json:"-" orm:"null"`
-		ProductId int     `json:"product_id" orm:"column(product_id)"`
-		ItemNo    int     `json:"item_no" orm:"column(item_no)"`
-		UomId     int     `json:"uom_id" orm:"column(uom_id)"`
-		Ratio     float64 `json:"ratio" orm:"column(ratio);digits(8);decimals(4);default(0)"`
-		IsDefault int8    `json:"is_default" orm:"column(is_default)"`
+		Id             int     `json:"-" orm:"null"`
+		ProductId      int     `json:"product_id" orm:"column(product_id)"`
+		ItemNo         int     `json:"item_no" orm:"column(item_no)"`
+		UomId          int     `json:"uom_id" orm:"column(uom_id)"`
+		Ratio          float64 `json:"ratio" orm:"column(ratio);digits(8);decimals(4);default(0)"`
+		IsDefault      int8    `json:"is_default" orm:"column(is_default)"`
+		IsDefaultRatio float64 `json:"is_default_ratio" orm:"column(is_default_ratio);digits(8);decimals(4);default(0)"`
+		FinalRatio     float64 `json:"final_ratio" orm:"column(final_ratio);digits(8);decimals(4);default(0)"`
+		Price          float64 `json:"price" orm:"column(price);digits(18);decimals(2);default(0)"`
 	}
 )
 
@@ -237,6 +240,7 @@ type (
 		NextUomId   int     `json:"next_uom_id"`
 		NextUomCode string  `json:"next_uom_code"`
 		IsDefault   int8    `json:"is_default"`
+		Price       float64 `json:"price"`
 	}
 
 	SimpleProductRtn struct {
@@ -247,6 +251,25 @@ type (
 		LeadTime     int    `json:"lead_time"`
 		UomId        int    `json:"uom_id"`
 		UomCode      string `json:"uom_code"`
+	}
+
+	ProductConversionRtnJson struct {
+		ProductId         int     `json:"product_id"`
+		ProductCode       string  `json:"product_code"`
+		ProductName       string  `json:"product_name"`
+		Qty               float64 `json:"qty"`
+		UomId             int     `json:"uom_id"`
+		UomCode           string  `json:"uom_code"`
+		Ratio             float64 `json:"ratio"`
+		PackagingId       int     `json:"packaging_id"`
+		PackagingCode     string  `json:"packaging_code"`
+		FinalQty          float64 `json:"final_qty"`
+		FinalUomId        int     `json:"final_uom_id"`
+		FinalUomCode      string  `json:"final_uom_code"`
+		ConversionQty     float64 `json:"conversion_qty"`
+		ConversionUomId   int     `json:"convertsion_uom_id"`
+		ConversionUomCode string  `json:"convertsion_uom_code"`
+		Price             float64 `json:"price"`
 	}
 )
 
@@ -562,5 +585,11 @@ func (t *Product) GetAllListRecycle(keyword string) (m []SimpleProductRtn, err e
 func (t *Product) Document(id, user_id int, folder_name string) (m []DocumentRtn) {
 	var doc Document
 	m = doc.GetDocument(id, folder_name)
+	return m
+}
+
+func (t *Product) GetConversion(qty float64, product_id, uom_id, user_id int) (m *ProductConversionRtnJson) {
+	o := orm.NewOrm()
+	o.Raw("call sp_ConvertUom(" + utils.Int2String(product_id) + "," + utils.Int2String(uom_id) + "," + utils.Float2String(qty) + "," + utils.Int2String(user_id) + ")").QueryRow(&m)
 	return m
 }

@@ -15,7 +15,7 @@ BEGIN
     while itemNo <= rn do
 		-- final_ratio
         if itemNo = 1 then
-			set qty = (select final_ratio from product_uom where product_id = uId and item_no = itemNo);
+			set qty = 1;
 		else
 			set qty = (select final_ratio from product_uom where product_id = uId and item_no = itemNo-1);
         end if;

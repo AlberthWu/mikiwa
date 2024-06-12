@@ -29,7 +29,7 @@ type (
 	PriceCompany struct {
 		Id       int      `json:"-" orm:"null"`
 		PriceId  *Price   `json:"price_id" orm:"column(price_id);rel(fk);null"`
-		OriginId *Company `json:"origin_id" orm:"column(origin_id);rel(fk);null"`
+		OriginId *Company `json:"company_id" orm:"column(company_id);rel(fk);null"`
 	}
 )
 
@@ -133,12 +133,12 @@ func (t *CompanyBusinessUnit) InsertM2M(id int, business_type string) (int64, er
 	}
 }
 
-func (t *PriceCompany) InsertM2m(price_id int, company_id string) (int64, error) {
+func (t *PriceCompany) InsertM2M(price_id int, company_id string) (int64, error) {
 	o := orm.NewOrm()
 	var header Price
 	Prices().Filter("id", price_id).One(&header)
 
-	sql := "delete from price_origin where price_id =" + utils.Int2String(price_id) + " "
+	sql := "delete from price_company where price_id =" + utils.Int2String(price_id) + " "
 	if _, err := o.Raw(sql).Exec(); err != nil {
 		return 0, err
 	}

@@ -18,7 +18,6 @@ var form_product_type = "product_type"
 var form_uom = "uom"
 var form_customer = "customer"
 var form_plant = "plant"
-var form_company_product = "company_product"
 var form_price = "sales_price"
 
 var t_product models.Product
