@@ -997,7 +997,7 @@ func (c *CompanyController) GetAllInsurance() {
 
 func (c *CompanyController) GetAllListInternal() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Internal)
+	d, err := t_company.GetAllList(keyword, base.Internal)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1014,7 +1014,7 @@ func (c *CompanyController) GetAllListInternal() {
 
 func (c *CompanyController) GetAllListCustomer() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Customer)
+	d, err := t_company.GetAllList(keyword, base.Customer)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1031,7 +1031,7 @@ func (c *CompanyController) GetAllListCustomer() {
 
 func (c *CompanyController) GetAllListCustOthers() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, CustomerOthers)
+	d, err := t_company.GetAllList(keyword, base.CustomerOthers)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1048,7 +1048,7 @@ func (c *CompanyController) GetAllListCustOthers() {
 
 func (c *CompanyController) GetAllListWarehouse() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Warehouse)
+	d, err := t_company.GetAllList(keyword, base.Warehouse)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1065,7 +1065,7 @@ func (c *CompanyController) GetAllListWarehouse() {
 
 func (c *CompanyController) GetAllListSparepart() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Sparepart)
+	d, err := t_company.GetAllList(keyword, base.Sparepart)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1082,7 +1082,7 @@ func (c *CompanyController) GetAllListSparepart() {
 
 func (c *CompanyController) GetAllListTransporter() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Transporter)
+	d, err := t_company.GetAllList(keyword, base.Transporter)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1099,7 +1099,7 @@ func (c *CompanyController) GetAllListTransporter() {
 
 func (c *CompanyController) GetAllListGoods() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Goods)
+	d, err := t_company.GetAllList(keyword, base.Goods)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1116,7 +1116,7 @@ func (c *CompanyController) GetAllListGoods() {
 
 func (c *CompanyController) GetAllListSuppOthers() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Others)
+	d, err := t_company.GetAllList(keyword, base.Others)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1133,7 +1133,7 @@ func (c *CompanyController) GetAllListSuppOthers() {
 
 func (c *CompanyController) GetAllListPartner() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Partner)
+	d, err := t_company.GetAllList(keyword, base.Partner)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -1150,7 +1150,7 @@ func (c *CompanyController) GetAllListPartner() {
 
 func (c *CompanyController) GetAllListInsurance() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_company.GetAllList(keyword, Insurance)
+	d, err := t_company.GetAllList(keyword, base.Insurance)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200

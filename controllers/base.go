@@ -30,6 +30,18 @@ const (
 	UpdateDetail = 11
 	DeleteDetail = 12
 )
+const (
+	Internal       = 1
+	Customer       = 2
+	CustomerOthers = 3
+	Warehouse      = 4
+	Sparepart      = 5
+	Transporter    = 8
+	Goods          = 9
+	Others         = 10
+	Partner        = 11
+	Insurance      = 12
+)
 
 func (c *BaseController) Prepare() {
 	o := orm.NewOrm()

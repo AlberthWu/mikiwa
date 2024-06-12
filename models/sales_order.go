@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/beego/beego/v2/client/orm"
+)
 
 type (
 	SalesOrder struct {
@@ -50,3 +54,57 @@ type (
 		DeletedBy    string    `json:"deleted_by" orm:"column(deleted_by)"`
 	}
 )
+
+func (t *SalesOrder) TableName() string {
+	return "uoms"
+}
+
+func SalesOrders() orm.QuerySeter {
+	return orm.NewOrm().QueryTable(new(SalesOrder))
+}
+
+func (t *SalesOrderDetail) TableName() string {
+	return "product_divisions"
+}
+
+func SalesOrderDetails() orm.QuerySeter {
+	return orm.NewOrm().QueryTable(new(SalesOrderDetail))
+}
+
+func init() {
+	orm.RegisterModel(new(SalesOrder), new(SalesOrderDetail))
+}
+
+func (t *SalesOrder) Insert(m SalesOrder) (*SalesOrder, error) {
+	o := orm.NewOrm()
+
+	if _, err := o.Insert(&m); err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+func (t *SalesOrder) Update(fields ...string) error {
+	o := orm.NewOrm()
+	if _, err := o.Update(t, fields...); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *SalesOrderDetail) Insert(m SalesOrderDetail) (*SalesOrderDetail, error) {
+	o := orm.NewOrm()
+
+	if _, err := o.Insert(&m); err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+func (t *SalesOrderDetail) Update(fields ...string) error {
+	o := orm.NewOrm()
+	if _, err := o.Update(t, fields...); err != nil {
+		return err
+	}
+	return nil
+}

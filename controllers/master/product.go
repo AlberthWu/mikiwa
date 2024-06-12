@@ -25,27 +25,18 @@ func (c *ProductController) Prepare() {
 
 type (
 	InputHeaderProduct struct {
-		ProductCode      string               `json:"product_code"`
-		ProductName      string               `json:"product_name"`
-		ProductTypeId    int                  `json:"product_type_id"`
-		ProductDivisonId int                  `json:"product_division_id"`
-		SerialNumber     string               `json:"serial_number"`
-		LeadTime         int                  `json:"lead_time"`
-		StatusId         int8                 `json:"status_id"`
-		UploadFile       models.DocumentList  `json:"upload_file"`
-		Uom              []InputBodyUom       `json:"uom"`
-		CustomUom        []InputBodyCustomUom `json:"custom_uom"`
+		ProductCode      string              `json:"product_code"`
+		ProductName      string              `json:"product_name"`
+		ProductTypeId    int                 `json:"product_type_id"`
+		ProductDivisonId int                 `json:"product_division_id"`
+		SerialNumber     string              `json:"serial_number"`
+		LeadTime         int                 `json:"lead_time"`
+		StatusId         int8                `json:"status_id"`
+		UploadFile       models.DocumentList `json:"upload_file"`
+		Uom              []InputBodyUom      `json:"uom"`
 	}
 
 	InputBodyUom struct {
-		UomId     int     `json:"uom_id"`
-		Ratio     float64 `json:"ratio"`
-		IsDefault int8    `json:"is_default"`
-	}
-
-	InputBodyCustomUom struct {
-		Id        int     `json:"id"`
-		CompanyId int     `json:"company_id"`
 		UomId     int     `json:"uom_id"`
 		Ratio     float64 `json:"ratio"`
 		IsDefault int8    `json:"is_default"`
@@ -79,7 +70,13 @@ func (c *ProductController) Post() {
 	var inputDetail []models.ProductUom
 
 	body := c.Ctx.Input.RequestBody
-	json.Unmarshal(body, &ob)
+	err = json.Unmarshal(body, &ob)
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.ProductCode), "product_code").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.ProductName), "product_name").Message("Is required")
@@ -190,6 +187,7 @@ func (c *ProductController) Post() {
 
 	var errcode int
 	var errmessage string
+	var ratio float64 = 1
 
 	t_product = models.Product{
 		ProductCode:         ob.ProductCode,
@@ -215,11 +213,16 @@ func (c *ProductController) Post() {
 	} else {
 		i = 0
 		for k, v := range ob.Uom {
+			if v.Ratio == 0 {
+				ratio = 1
+			} else {
+				ratio = v.Ratio
+			}
 			inputDetail = append(inputDetail, models.ProductUom{
 				ProductId: d.Id,
 				ItemNo:    k + 1,
 				UomId:     v.UomId,
-				Ratio:     v.Ratio,
+				Ratio:     ratio,
 				IsDefault: v.IsDefault,
 			})
 			i += 1
@@ -232,7 +235,7 @@ func (c *ProductController) Post() {
 			c.ServeJSON()
 			return
 		}
-
+		o.Raw("call sp_CalcProductUom(" + utils.Int2String(d.Id) + "," + utils.Int2String(user_id) + ")").Exec()
 		v, err := t_product.GetById(d.Id, user_id)
 		errcode, errmessage = base.DecodeErr(err)
 		if err != nil {
@@ -273,7 +276,14 @@ func (c *ProductController) Put() {
 	var inputDetail []models.ProductUom
 
 	body := c.Ctx.Input.RequestBody
-	json.Unmarshal(body, &ob)
+	err = json.Unmarshal(body, &ob)
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	var querydata models.Product
 	err = models.Products().Filter("id", id).One(&querydata)
@@ -409,13 +419,14 @@ func (c *ProductController) Put() {
 
 	var errcode int
 	var errmessage string
+	var ratio float64
+
 	t_product.Id = id
 	t_product.ProductCode = ob.ProductCode
 	t_product.ProductName = ob.ProductName
 	t_product.ProductTypeId = ob.ProductTypeId
 	t_product.ProductTypeName = types.TypeName
 	t_product.ProductDivisionId = ob.ProductDivisonId
-
 	t_product.ProductDivisionCode = division.DivisionCode
 	t_product.ProductDivisionName = division.DivisionName
 	t_product.SerialNumber = ob.SerialNumber
@@ -435,11 +446,16 @@ func (c *ProductController) Put() {
 		o.Raw("delete from product_uom where product_id = " + utils.Int2String(id) + " ").Exec()
 		i = 0
 		for k, v := range ob.Uom {
+			if v.Ratio == 0 {
+				ratio = 1
+			} else {
+				ratio = v.Ratio
+			}
 			inputDetail = append(inputDetail, models.ProductUom{
 				ProductId: id,
 				ItemNo:    k + 1,
 				UomId:     v.UomId,
-				Ratio:     v.Ratio,
+				Ratio:     ratio,
 				IsDefault: v.IsDefault,
 			})
 			i += 1
@@ -452,7 +468,7 @@ func (c *ProductController) Put() {
 			c.ServeJSON()
 			return
 		}
-
+		o.Raw("call sp_CalcProductUom(" + utils.Int2String(id) + "," + utils.Int2String(user_id) + ")").Exec()
 		v, err := t_product.GetById(id, user_id)
 		errcode, errmessage = base.DecodeErr(err)
 		if err != nil {
@@ -810,5 +826,18 @@ func (c *ProductController) GetAllListRecycle() {
 	} else {
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
 	}
+	c.ServeJSON()
+}
+
+func (c *ProductController) GetProductUom() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	product_id, _ := c.GetInt("product_id")
+	uom_id, _ := c.GetInt("uom_id")
+	d := t_product.GetProductUom(product_id, uom_id, user_id)
+	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	c.ServeJSON()
 }

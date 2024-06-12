@@ -44,6 +44,7 @@ type (
 		DeletedAt       time.Time       `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
 		CompanyTypes    []*CompanyTypes `json:"-" orm:"reverse(many);rel_through(mikiwa/models.CompanyCompanyType)"`
 		BusinessUnit    []*BusinessUnit `json:"-" orm:"reverse(many);rel_through(mikiwa/models.CompanyBusinessUnit)"`
+		Price           []*Price        `json:"-" orm:"rel(m2m);rel_through(mikiwa/models.PriceCompany)"`
 	}
 
 	Plant struct {
