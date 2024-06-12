@@ -230,9 +230,12 @@ type (
 		ItemNo      int     `json:"item_no"`
 		ProductId   int     `json:"product_id"`
 		ProductCode string  `json:"product_code"`
+		ProductName string  `json:"product_name"`
 		UomId       int     `json:"uom_id"`
 		UomCode     string  `json:"uom_code"`
 		Ratio       float64 `json:"ratio"`
+		NextUomId   int     `json:"next_uom_id"`
+		NextUomCode string  `json:"next_uom_code"`
 		IsDefault   int8    `json:"is_default"`
 	}
 
@@ -488,6 +491,12 @@ func (t *Product) GetAllDetail(keyword, field_name, match_mode, value_name strin
 		err = orm.ErrNoRows
 	}
 	return m, err
+}
+
+func (t *Product) GetProductUom(product_id, uom_id, user_id int) (m []ProductUomRtnJson) {
+	o := orm.NewOrm()
+	o.Raw("call sp_ProductUom(" + utils.Int2String(product_id) + "," + utils.Int2String(uom_id) + "," + utils.Int2String(user_id) + ")").QueryRows(&m)
+	return m
 }
 
 func (t *Product) GetAllListRaw(keyword string) (m []SimpleProductRtn, err error) {

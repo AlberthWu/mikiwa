@@ -18,6 +18,8 @@ var form_product_type = "product_type"
 var form_uom = "uom"
 var form_customer = "customer"
 var form_plant = "plant"
+var form_company_product = "company_product"
+var form_price = "sales_price"
 
 var t_product models.Product
 var t_product_type models.ProductType
@@ -30,20 +32,10 @@ var t_plant models.Plant
 var t_bank models.Bank
 var t_city models.City
 var t_company_type models.CompanyTypes
+var t_price models.Price
+var t_price_company models.PriceCompany
+var t_price_product_uom models.PriceProductUom
 
 type DeleteBody struct {
 	Id string `json:"id"`
 }
-
-const (
-	Internal       = 1
-	Customer       = 2
-	CustomerOthers = 3
-	Warehouse      = 4
-	Sparepart      = 5
-	Transporter    = 8
-	Goods          = 9
-	Others         = 10
-	Partner        = 11
-	Insurance      = 12
-)
