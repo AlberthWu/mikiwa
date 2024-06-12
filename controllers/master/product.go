@@ -6,7 +6,6 @@ import (
 	base "mikiwa/controllers"
 	"mikiwa/models"
 	"mikiwa/utils"
-	"mime/multipart"
 	"strconv"
 	"strings"
 
@@ -40,6 +39,7 @@ type (
 		UomId     int     `json:"uom_id"`
 		Ratio     float64 `json:"ratio"`
 		IsDefault int8    `json:"is_default"`
+		Price     float64 `json:"price"`
 	}
 )
 
@@ -224,6 +224,7 @@ func (c *ProductController) Post() {
 				UomId:     v.UomId,
 				Ratio:     ratio,
 				IsDefault: v.IsDefault,
+				Price:     v.Price,
 			})
 			i += 1
 		}
@@ -457,12 +458,13 @@ func (c *ProductController) Put() {
 				UomId:     v.UomId,
 				Ratio:     ratio,
 				IsDefault: v.IsDefault,
+				Price:     v.Price,
 			})
 			i += 1
 		}
 
 		o.InsertMulti(i, inputDetail)
-		if err := base.PostFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
+		if err := base.PutFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprint("Error processing data and uploading to Firebase: ", err.Error()))
 			c.ServeJSON()
@@ -692,13 +694,11 @@ func (c *ProductController) PostDocument() {
 		c.Ctx.ResponseWriter.WriteHeader(code)
 		utils.ReturnHTTPError(&c.Controller, code, message)
 	} else {
-		for _, fileHeader := range upload_file {
-			if err := base.PostFilesToFirebase([]*multipart.FileHeader{fileHeader}, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
-				c.Ctx.ResponseWriter.WriteHeader(401)
-				utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error while posting files to Firebase: %s", err.Error()))
-				c.ServeJSON()
-				return
-			}
+		if err := base.PutFilesFirebase(upload_file, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(401)
+			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error while posting files to Firebase: %s", err.Error()))
+			c.ServeJSON()
+			return
 		}
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Sucess", "File uploaded")
 	}
@@ -838,6 +838,20 @@ func (c *ProductController) GetProductUom() {
 	product_id, _ := c.GetInt("product_id")
 	uom_id, _ := c.GetInt("uom_id")
 	d := t_product.GetProductUom(product_id, uom_id, user_id)
+	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
+	c.ServeJSON()
+}
+
+func (c *ProductController) GetConversion() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	uom_id, _ := c.GetInt("uom_id")
+	qty, _ := c.GetFloat("qty")
+	d := t_product.GetConversion(qty, id, uom_id, user_id)
 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	c.ServeJSON()
 }

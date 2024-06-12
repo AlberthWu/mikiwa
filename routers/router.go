@@ -63,6 +63,7 @@ func init() {
 	beego.Router("/v1/product/list/others", &master.ProductController{}, "get:GetAllListOthers")
 	beego.Router("/v1/product/list/recycle", &master.ProductController{}, "get:GetAllListRecycle")
 	beego.Router("/v1/product/list/uom", &master.ProductController{}, "get:GetProductUom")
+	beego.Router("/v1/product/conversion/:id", &master.ProductController{}, "get:GetConversion")
 	// image
 	beego.Router("/v1/product/document/:id", &master.ProductController{}, "post:PostDocument;get:GetDocument")
 	// uom
@@ -146,4 +147,7 @@ func init() {
 
 	// banks
 	beego.Router("/v1/bank/list", &master.BankController{}, "get:GetAllList")
+
+	// price
+	beego.Router("/v1/sales/price", &master.PriceController{}, "post:Post")
 }

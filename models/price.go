@@ -14,20 +14,15 @@ type (
 		ProductId     int        `json:"product_id" orm:"column(product_id)"`
 		ProductCode   string     `json:"product_code" orm:"column(product_code)"`
 		NormalPrice   float64    `json:"normal_price" orm:"column(normal_price)"`
-		UomIdOne      int        `json:"uom_id_one" orm:"column(uom_id_one)"`
-		UomCodeOne    string     `json:"uom_code_one" orm:"column(uom_code_one)"`
-		Ratio         float64    `json:"ratio" orm:"column(ratio);digits(12);decimals(4);default(0)"`
-		UomIdTwo      int        `json:"uom_id_two" orm:"column(uom_id_two)"`
-		UomCodeTwo    string     `json:"uom_code_two" orm:"column(uom_code_two)"`
 		DiscOne       float64    `json:"disc_one" orm:"column(disc_one)"`
 		DiscTwo       float64    `json:"disc_two" orm:"column(disc_two)"`
-		DiscTpr       float64    `json:"disc_type" orm:"column(disc_type)"`
+		DiscTpr       float64    `json:"disc_tpr" orm:"column(disc_tpr)"`
 		Price         float64    `json:"price" orm:"column(price)"`
-		SureName      string     `json:"sure_name" orm:"column(sure_name)"`
-		PriceType     string     `json:"price_type" orm:"column(price_type)"`
-		Qty           float64    `json:"qty" orm:"column(qty);digits(12);decimals(4);default(0)"`
 		UomId         int        `json:"uom_id" orm:"column(uom_id)"`
 		UomCode       string     `json:"uom_code" orm:"column(uom_code)"`
+		Ratio         float64    `json:"ratio" orm:"column(ratio);digits(12);decimals(4);default(0)"`
+		SureName      string     `json:"sure_name" orm:"column(sure_name)"`
+		PriceType     string     `json:"price_type" orm:"column(price_type)"`
 		StatusId      int8       `json:"status_id" orm:"column(status_id)"`
 		CreatedAt     time.Time  `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
 		UpdatedAt     time.Time  `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
@@ -39,13 +34,24 @@ type (
 	}
 
 	PriceProductUom struct {
-		Id        int     `json:"id" orm:"column(id);auto;pk"`
-		PriceId   int     `json:"price_id" orm:"column(price_id)"`
-		CompanyId int     `json:"company_id" orm:"column(company_id)"`
-		ProductId int     `json:"product_id" orm:"column(product_id)"`
-		ItemNo    int     `json:"item_no" orm:"column(item_no)"`
-		UomId     int     `json:"uom_id" orm:"column(uom_id)"`
-		Ratio     float64 `json:"ratio" orm:"column(ratio);digits(12);decimals(4);default(0)"`
+		Id             int       `json:"id" orm:"column(id);auto;pk"`
+		PriceId        int       `json:"price_id" orm:"column(price_id)"`
+		ProductId      int       `json:"product_id" orm:"column(product_id)"`
+		ItemNo         int       `json:"item_no" orm:"column(item_no)"`
+		UomId          int       `json:"uom_id" orm:"column(uom_id)"`
+		IsDefault      int8      `json:"is_default" orm:"column(is_default)"`
+		Ratio          float64   `json:"ratio" orm:"column(ratio);digits(12);decimals(4);default(0)"`
+		DiscOne        float64   `json:"disc_one" orm:"column(disc_one)"`
+		DiscTwo        float64   `json:"disc_two" orm:"column(disc_two)"`
+		DiscTpr        float64   `json:"disc_tpr" orm:"column(disc_tpr)"`
+		IsDefaultRatio float64   `json:"is_default_ratio" orm:"column(is_default_ratio);digits(8);decimals(4);default(0)"`
+		FinalRatio     float64   `json:"final_ratio" orm:"column(final_ratio);digits(8);decimals(4);default(0)"`
+		CreatedAt      time.Time `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
+		UpdatedAt      time.Time `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
+		DeletedAt      time.Time `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
+		CreatedBy      string    `json:"created_by" orm:"column(created_by)"`
+		UpdatedBy      string    `json:"updated_by" orm:"column(updated_by)"`
+		DeletedBy      string    `json:"deleted_by" orm:"column(deleted_by)"`
 	}
 )
 
@@ -102,3 +108,8 @@ func (t *PriceProductUom) Update(fields ...string) error {
 	}
 	return nil
 }
+
+func (t *Price) GetById() (m *Price, err error) {
+	return m, err
+}
+func (t *Price) GetAll() {}
