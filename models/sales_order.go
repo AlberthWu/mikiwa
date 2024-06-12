@@ -56,7 +56,7 @@ type (
 )
 
 func (t *SalesOrder) TableName() string {
-	return "uoms"
+	return "sales_order"
 }
 
 func SalesOrders() orm.QuerySeter {
@@ -64,7 +64,7 @@ func SalesOrders() orm.QuerySeter {
 }
 
 func (t *SalesOrderDetail) TableName() string {
-	return "product_divisions"
+	return "sales_order_detail"
 }
 
 func SalesOrderDetails() orm.QuerySeter {
