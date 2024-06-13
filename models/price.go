@@ -13,6 +13,8 @@ type (
 		ExpiredDate   *time.Time `json:"expired_date" orm:"column(expired_date);type(date);null"`
 		ProductId     int        `json:"product_id" orm:"column(product_id)"`
 		ProductCode   string     `json:"product_code" orm:"column(product_code)"`
+		CompanyId     int        `json:"company_id" orm:"column(company_id)"`
+		CompanyCode   string     `json:"company_code" orm:"column(company_code)"`
 		NormalPrice   float64    `json:"normal_price" orm:"column(normal_price)"`
 		DiscOne       float64    `json:"disc_one" orm:"column(disc_one)"`
 		DiscTwo       float64    `json:"disc_two" orm:"column(disc_two)"`

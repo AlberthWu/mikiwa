@@ -52,7 +52,7 @@ BEGIN
     set divisionIdSet = case when (divisionIds is null or divisionIds = '') then '' else concat(" AND t1.product_division_id in (",replace(divisionIds,'''',''),")") end ;
     set typeIdSet = case when (typeIds is null or typeIds = '') then '' else concat(" and (t1.product_type_id in (",replace(typeIds,'''',''),")") end ;
     SET keywordSet  = case when (keyword is null or keyword = '') then '' else concat(" and (t1.product_code like '%",keyword,"%'  or t1.product_name like '%",keyword,"%' or t3.company_code like '%",keyword,"%' or t3.company_name like '%",keyword,"%' 
-		 or t1.divisio_code like '%",keyword,"%'   or t1.product_type_name like '%",keyword,"%' or t2.uom_code  like '%",keyword,"%')")   end;
+		 or t1.division_code like '%",keyword,"%'   or t1.product_type_name like '%",keyword,"%' or t2.uom_code  like '%",keyword,"%')")   end;
    
     SET limitSet = case when LimitVal is null then '' else concat(" limit ",offsetVal,",",limitVal)    end;
     
@@ -80,16 +80,16 @@ BEGIN
 									deleted_at is null ",theDateSet,uIdSet,userIdSet,statusIdSet,updatedAtSet,divisionIdSet,typeIdSet,keywordSet,"
 								) x order by product_id,item_no;"));
 	else
-		SET @s =  (concat ("select id,effective_date,expired_date,customer_code,product_id,product_code,product_name,product_division_id,product_division_code,product_type_id,product_type_name,normal_price,disc_one,disc_one_desc,disc_two,disc_tpr,price,uom_id,uom_code,ratio,sure_name,status_id,status_data
-								,'effective_date,expired_date,customer_code,product_code,product_name,sure_name,product_division_code,product_type_name,normal_price,disc_one_desc,disc_two_desc,disc_tpr_desc,price,status_data' field_key
+		SET @s =  (concat ("select id,effective_date,expired_date,company_id,company_code,company_name,product_id,product_code,product_name,product_division_id,product_division_code,product_type_id,product_type_name,normal_price,disc_one,disc_one_desc,disc_two,disc_tpr,price,uom_id,uom_code,ratio,sure_name,status_id,status_data
+								,'effective_date,expired_date,company_code,product_code,product_name,sure_name,product_division_code,product_type_name,normal_price,disc_one_desc,disc_two_desc,disc_tpr_desc,price,status_data' field_key
 								,'Tgl efektif,Tgl exp,Pelanggan,Kode,Nama,Alias,Divisi,Tipe,Normal,Disc 1,Disc 2,Disc tpr,Harga,Status Data' field_label
-								,'effective_date,expired_date,customer_code,product_code,product_name,sure_name,product_division_code,product_type_name,normal_price,disc_one_desc,disc_two_desc,disc_tpr_desc,price,status_data' field_export
+								,'effective_date,expired_date,company_code,product_code,product_name,sure_name,product_division_code,product_type_name,normal_price,disc_one_desc,disc_two_desc,disc_tpr_desc,price,status_data' field_export
 								,'Tgl efektif,Tgl exp,Pelanggan,Kode,Nama,Alias,Divisi,Tipe,Normal,Disc 1,Disc 2,Disc tpr,Harga,Status Data' field_export_label
 								,'normal_price,price' field_int
 								,'' field_footer
 								,'' field_level 
 							from (
-								select t0.id,effective_date,expired_date,GROUP_CONCAT(t3.company_code order by t3.company_code SEPARATOR '; ') customer_code,product_id,t1.product_code,t1.product_name,t1.product_division_id,t1.product_division_code,t1.product_type_id,t1.product_type_name,t1.normal_price,
+								select t0.id,effective_date,expired_date,company_id,t3.company_code,t3.company_name,product_id,t1.product_code,t1.product_name,t1.product_division_id,t1.product_division_code,t1.product_type_id,t1.product_type_name,t1.normal_price,
 									disc_one,concat(disc_one,' %')  disc_one_desc,disc_two,concat(disc_two,' %') disc_two_desc,disc_tpr,concat('Rp',disc_tpr) disc_tpr_desc,
 									cast((t1.normal_price + ((t1.normal_price*disc_one)/100) + (t1.normal_price + (t1.normal_price*disc_one)/100)*disc_two/100) + disc_tpr as decimal(18,2)) price,
 									uom_id,t2.uom_code,ratio,sure_name,status_id,case when date(t0.created_at) = date(t0.updated_at) then 'NEW' else 'EDIT!!' end status_data,
@@ -99,10 +99,9 @@ BEGIN
 													left join (select id,division_code product_division_code from product_divisions) t1 on t1.id=t0.product_division_id
 													left join (select id,type_name product_type_name from product_types) t2 on t2.id=t0.product_type_id) t1 on t1.id=t0.product_id
 									left join (select id,uom_code from uoms) t2 on t2.id=t0.uom_id
-									left join (select price_id,company_id,company_code,company_name from price_company t0 
-													left join (select id,code company_code,name company_name from companies) t1 on t1.id=t0.company_id) t3 on t3.price_id=t0.id
+									left join (select id,`code` company_code,`name` company_name from companies) t3 on t3.id=t0.company_id
 								where deleted_at is null ",theDateSet,uIdSet,userIdSet,statusIdSet,updatedAtSet,divisionIdSet,typeIdSet,keywordSet,"
-								group by id,effective_date,expired_date,product_id,t1.product_code,t1.product_name,t1.product_division_id,t1.product_division_code,t1.product_type_id,t1.product_type_name,t1.normal_price,disc_one,disc_two,disc_tpr,uom_id,t2.uom_code,ratio,sure_name,status_id) x where dr=1 ",ColumnSet,limitSet," ;"));
+								) x where dr=1 ",ColumnSet,limitSet," ;"));
     end if;
 	PREPARE stmt FROM @s;
 	EXECUTE stmt;
