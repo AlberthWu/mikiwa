@@ -281,15 +281,14 @@ func (c *PriceController) Post() {
 			c.ServeJSON()
 			return
 		}
-		// o.Raw("call sp_GeneratePriceProduct()").Exec()
-		// v, err := t_price.GetById(d.Id)
-		// errcode, errmessage := base.DecodeErr(err)
-		// if err != nil {
-		// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
-		// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-		// } else {
-		// 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
-		// }
+		v, err := t_price.GetById(d.Id, user_id)
+		errcode, errmessage := base.DecodeErr(err)
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(errcode)
+			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+		} else {
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
+		}
 	}
 	c.ServeJSON()
 }
@@ -574,15 +573,14 @@ func (c *PriceController) Put() {
 			c.ServeJSON()
 			return
 		}
-		// o.Raw("call sp_GeneratePriceProduct()").Exec()
-		// v, err := t_price.GetById(d.Id)
-		// errcode, errmessage := base.DecodeErr(err)
-		// if err != nil {
-		// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
-		// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-		// } else {
-		// 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
-		// }
+		v, err := t_price.GetById(id, user_id)
+		errcode, errmessage := base.DecodeErr(err)
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(errcode)
+			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+		} else {
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
+		}
 	}
 	c.ServeJSON()
 }
@@ -629,28 +627,86 @@ func (c *PriceController) Delete() {
 	c.ServeJSON()
 }
 func (c *PriceController) GetOne() {
-	// var user_id int
-	// sess := c.GetSession("profile")
-	// if sess != nil {
-	// 	user_id = sess.(map[string]interface{})["id"].(int)
-	// }
-	// id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
-	// v, err := t_price.GetById(id, user_id)
-	// code, message := base.DecodeErr(err)
-	// if err == orm.ErrNoRows {
-	// 	code = 200
-	// 	c.Ctx.ResponseWriter.WriteHeader(code)
-	// 	utils.ReturnHTTPError(&c.Controller, code, "No data")
-	// } else if err != nil {
-	// 	c.Ctx.ResponseWriter.WriteHeader(code)
-	// 	utils.ReturnHTTPError(&c.Controller, code, message)
-	// } else {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	v, err := t_price.GetById(id, user_id)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
 
-	// 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, v)
-	// }
-	// c.ServeJSON()
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, v)
+	}
+	c.ServeJSON()
 }
-func (c *PriceController) GetAll() {}
+func (c *PriceController) GetAll() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	var issueDate, updatedat *string
+
+	currentPage, _ := c.GetInt("page")
+	if currentPage == 0 {
+		currentPage = 1
+	}
+
+	pageSize, _ := c.GetInt("pagesize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+	allsize, _ := c.GetInt("allsize")
+
+	status_ids := strings.TrimSpace(c.GetString("status_ids"))
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	sales_ids := strings.TrimSpace(c.GetString("sales_ids"))
+	division_ids := strings.TrimSpace(c.GetString("division_ids"))
+	type_ids := strings.TrimSpace(c.GetString("type_ids"))
+
+	if issue_date == "" {
+		issueDate = nil
+
+	} else {
+		issueDate = &issue_date
+	}
+
+	if updated_at == "" {
+		updatedat = nil
+
+	} else {
+		updatedat = &updated_at
+	}
+
+	d, err := t_price.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, 0, user_id, division_ids, type_ids, sales_ids, status_ids, issueDate, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
 func (c *PriceController) CalcPrice() {
 	var user_id int
 	sess := c.GetSession("profile")

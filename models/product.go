@@ -271,6 +271,11 @@ type (
 		ConversionUomCode string  `json:"convertsion_uom_code"`
 		Price             float64 `json:"price"`
 	}
+
+	SimpleUomRtnJson struct {
+		Id   int    `json:"id"`
+		Code string `json:"code"`
+	}
 )
 
 func (t *ProductDivision) GetById(id int) (m *ProductDivision, err error) {

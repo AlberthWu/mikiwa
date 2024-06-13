@@ -57,27 +57,27 @@ BEGIN
     SET limitSet = case when LimitVal is null then '' else concat(" limit ",offsetVal,",",limitVal)    end;
     
     if reportTypeId = 0 then
+		set uIdSet = case when (uId is null  or uId = 0) then '' else concat(" and t0.price_id in (",uId,")")   end;
 		SET @s =  (concat ("select price_id,product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,normal_price,disc_one,disc_two,disc_tpr,price
-								,'product_code,product_name,uom_code,ratio,disc_one_disc_two,disc_tpr,price,is_default' field_key
-								,'Kode,Nama,Uom,Ratio,Disc 1(%),Disc 2(%),Disc tpr,Harga,Default' field_label
-								,'product_code,product_name,uom_code,ratio,disc_one_disc_two,disc_tpr,price,is_default' field_export
-								,'Kode,Nama,Uom,Ratio,Disc 1(%),Disc 2(%),Disc tpr,Harga,Default' field_export_label
+								,'product_code,product_name,uom_code,ratio,normal_price,disc_one_disc_two,disc_tpr,price,is_default' field_key
+								,'Kode,Nama,Uom,Ratio,Harga,Disc 1(%),Disc 2(%),Disc tpr,Harga,Default' field_label
+								,'product_code,product_name,uom_code,ratio,normal_price,disc_one_disc_two,disc_tpr,price,is_default' field_export
+								,'Kode,Nama,Uom,Ratio,Harga,Disc 1(%),Disc 2(%),Disc tpr,Harga,Default' field_export_label
 								,'normal_price,disc_one,disc_two,disc_tpr,price' field_int
 								,'' field_footer
 								,'' field_level 
 							from 
 								(select 
-									price_id,product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,normal_price,disc_one,disc_two,disc_tpr,price
+									price_id,product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,t1.normal_price,disc_one*-1 disc_one,disc_two*-1 disc_two,disc_tpr*-1 disc_tpr,
+                                    cast((t1.normal_price + ((t1.normal_price*disc_one)/100) + (t1.normal_price + (t1.normal_price*disc_one)/100)*disc_two/100) + disc_tpr as decimal(18,2)) price
 								from 
 									price_product_uom t0
 								left join 
-									(select id,product_code,product_name,price from products) t1 on t1.id = t0.product_id
+									(select id,product_code,product_name,price normal_price from products) t1 on t1.id = t0.product_id
 								left join 
 									(select id,uom_code from uoms)t2 on t2.id = t0.uom_id
-								left join
-									(select id,effective_date,expired_date
                                 where
-									deleted_at is null ",theDateSet,uIdSet,userIdSet,statusIdSet,updatedAtSet,divisionIdSet,typeIdSet,keywordSet,"
+									deleted_at is null ",uIdSet,"
 								) x order by product_id,item_no;"));
 	else
 		SET @s =  (concat ("select id,effective_date,expired_date,company_id,company_code,company_name,product_id,product_code,product_name,product_division_id,product_division_code,product_type_id,product_type_name,normal_price,disc_one,disc_one_desc,disc_two,disc_tpr,price,uom_id,uom_code,ratio,sure_name,status_id,status_data
