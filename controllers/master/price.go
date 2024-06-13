@@ -27,7 +27,7 @@ type (
 	InputHeaderPrice struct {
 		EffectiveDate string             `json:"effective_date"`
 		ExpiredDate   string             `json:"expired_date"`
-		CompanyIds    string             `json:"company_ids"`
+		CompanyId     int                `json:"company_id"`
 		ProductId     int                `json:"product_id"`
 		SureName      string             `json:"sure_name"`
 		StatusId      int8               `json:"status_id"`
@@ -88,7 +88,7 @@ func (c *PriceController) Post() {
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.EffectiveDate), "effective_date").Message("Is required")
 	valid.Required(ob.ProductId, "product_id").Message("Is required")
-	valid.Required(ob.CompanyIds, "company_id").Message("Is required")
+	valid.Required(ob.CompanyId, "company_id").Message("Is required")
 
 	if len(ob.Price) == 0 {
 		valid.AddError("price", "0 not allowed")
@@ -106,16 +106,25 @@ func (c *PriceController) Post() {
 	}
 
 	var company models.Company
+	err = models.Companies().Filter("id", ob.CompanyId).Filter("CompanyTypes__TypeId__Id", base.Customer).Filter("deleted_at__isnull", true).One(&company)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Customer unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
 
-	companyArray := strings.Split(ob.CompanyIds, ",")
-	for _, ch := range companyArray {
-		err = models.Companies().Filter("id", utils.String2Int(strings.TrimSpace(ch))).Filter("CompanyTypes__TypeId__Id", base.Customer).One(&company)
-		if err == orm.ErrNoRows {
-			c.Ctx.ResponseWriter.WriteHeader(401)
-			utils.ReturnHTTPError(&c.Controller, 401, "Customer unregistered/Illegal data")
-			c.ServeJSON()
-			return
-		}
+	if company.Status == 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", company.Code))
+		c.ServeJSON()
+		return
 	}
 
 	var products models.Product
@@ -215,6 +224,8 @@ func (c *PriceController) Post() {
 	t_price = models.Price{
 		EffectiveDate: thedate,
 		ExpiredDate:   expireddate,
+		CompanyId:     ob.CompanyId,
+		CompanyCode:   company.Code,
 		ProductId:     ob.ProductId,
 		ProductCode:   products.ProductCode,
 		UomId:         uom_id,
@@ -263,22 +274,21 @@ func (c *PriceController) Post() {
 		// disc_two := (ob.Price - disc_one) * ob.DiscTwo / 100
 		// price := ob.Price - disc_one - disc_two - ob.DiscTpr
 
-		_, err_ = t_price_company.InsertM2M(d.Id, ob.CompanyIds)
+		_, err_ = t_price_company.InsertM2M(d.Id, utils.Int2String(ob.CompanyId))
 		errcode, errmessage = base.DecodeErr(err_)
 		if err_ != nil {
 			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
 			c.ServeJSON()
 			return
 		}
-		// o.Raw("call sp_GeneratePriceProduct()").Exec()
-		// v, err := t_price.GetById(d.Id)
-		// errcode, errmessage := base.DecodeErr(err)
-		// if err != nil {
-		// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
-		// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-		// } else {
-		// 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
-		// }
+		v, err := t_price.GetById(d.Id, user_id)
+		errcode, errmessage := base.DecodeErr(err)
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(errcode)
+			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+		} else {
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
+		}
 	}
 	c.ServeJSON()
 }
@@ -360,16 +370,25 @@ func (c *PriceController) Put() {
 	}
 
 	var company models.Company
+	err = models.Companies().Filter("id", ob.CompanyId).Filter("CompanyTypes__TypeId__Id", base.Customer).Filter("deleted_at__isnull", true).One(&company)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Customer unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
 
-	companyArray := strings.Split(ob.CompanyIds, ",")
-	for _, ch := range companyArray {
-		err = models.Companies().Filter("id", utils.String2Int(strings.TrimSpace(ch))).Filter("CompanyTypes__TypeId__Id", base.Customer).One(&company)
-		if err == orm.ErrNoRows {
-			c.Ctx.ResponseWriter.WriteHeader(401)
-			utils.ReturnHTTPError(&c.Controller, 401, "Customer division unregistered/Illegal data")
-			c.ServeJSON()
-			return
-		}
+	if company.Status == 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", company.Code))
+		c.ServeJSON()
+		return
 	}
 
 	var products models.Product
@@ -483,6 +502,8 @@ func (c *PriceController) Put() {
 	t_price.Id = id
 	t_price.EffectiveDate = thedate
 	t_price.ExpiredDate = expireddate
+	t_price.CompanyId = ob.CompanyId
+	t_price.CompanyCode = company.Code
 	t_price.ProductId = ob.ProductId
 	t_price.ProductCode = products.ProductCode
 	t_price.UomId = uom_id
@@ -545,22 +566,21 @@ func (c *PriceController) Put() {
 		// disc_two := (ob.Price - disc_one) * ob.DiscTwo / 100
 		// price := ob.Price - disc_one - disc_two - ob.DiscTpr
 
-		_, err_ = t_price_company.InsertM2M(id, ob.CompanyIds)
+		_, err_ = t_price_company.InsertM2M(id, utils.Int2String(ob.CompanyId))
 		errcode, errmessage = base.DecodeErr(err_)
 		if err_ != nil {
 			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
 			c.ServeJSON()
 			return
 		}
-		// o.Raw("call sp_GeneratePriceProduct()").Exec()
-		// v, err := t_price.GetById(d.Id)
-		// errcode, errmessage := base.DecodeErr(err)
-		// if err != nil {
-		// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
-		// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-		// } else {
-		// 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
-		// }
+		v, err := t_price.GetById(id, user_id)
+		errcode, errmessage := base.DecodeErr(err)
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(errcode)
+			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+		} else {
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
+		}
 	}
 	c.ServeJSON()
 }
@@ -607,28 +627,86 @@ func (c *PriceController) Delete() {
 	c.ServeJSON()
 }
 func (c *PriceController) GetOne() {
-	// var user_id int
-	// sess := c.GetSession("profile")
-	// if sess != nil {
-	// 	user_id = sess.(map[string]interface{})["id"].(int)
-	// }
-	// id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
-	// v, err := t_price.GetById(id, user_id)
-	// code, message := base.DecodeErr(err)
-	// if err == orm.ErrNoRows {
-	// 	code = 200
-	// 	c.Ctx.ResponseWriter.WriteHeader(code)
-	// 	utils.ReturnHTTPError(&c.Controller, code, "No data")
-	// } else if err != nil {
-	// 	c.Ctx.ResponseWriter.WriteHeader(code)
-	// 	utils.ReturnHTTPError(&c.Controller, code, message)
-	// } else {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	v, err := t_price.GetById(id, user_id)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
 
-	// 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, v)
-	// }
-	// c.ServeJSON()
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, v)
+	}
+	c.ServeJSON()
 }
-func (c *PriceController) GetAll() {}
+func (c *PriceController) GetAll() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	var issueDate, updatedat *string
+
+	currentPage, _ := c.GetInt("page")
+	if currentPage == 0 {
+		currentPage = 1
+	}
+
+	pageSize, _ := c.GetInt("pagesize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+	allsize, _ := c.GetInt("allsize")
+
+	status_ids := strings.TrimSpace(c.GetString("status_ids"))
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	sales_ids := strings.TrimSpace(c.GetString("sales_ids"))
+	division_ids := strings.TrimSpace(c.GetString("division_ids"))
+	type_ids := strings.TrimSpace(c.GetString("type_ids"))
+
+	if issue_date == "" {
+		issueDate = nil
+
+	} else {
+		issueDate = &issue_date
+	}
+
+	if updated_at == "" {
+		updatedat = nil
+
+	} else {
+		updatedat = &updated_at
+	}
+
+	d, err := t_price.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, 0, user_id, division_ids, type_ids, sales_ids, status_ids, issueDate, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
 func (c *PriceController) CalcPrice() {
 	var user_id int
 	sess := c.GetSession("profile")
@@ -636,7 +714,7 @@ func (c *PriceController) CalcPrice() {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
 	issue_date := strings.TrimSpace(c.GetString("issue_date"))
-	customer_id, _ := c.GetInt("product_id")
+	company_id, _ := c.GetInt("company_id")
 	product_id, _ := c.GetInt("product_id")
 	uom_id, _ := c.GetInt("uom_id")
 	disc_one, _ := c.GetFloat("disc_one")
@@ -646,7 +724,7 @@ func (c *PriceController) CalcPrice() {
 	if issue_date == "" {
 		issue_date = utils.GetSvrDate().Format("2006-01-02")
 	}
-	price := t_product.GetPrice(issue_date, customer_id, product_id, uom_id, user_id, 0, 1, disc_one, disc_two, disc_tpr)
+	price := t_product.GetPrice(issue_date, company_id, product_id, uom_id, user_id, 0, 1, disc_one, disc_two, disc_tpr)
 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", map[string]interface{}{"price": fmt.Sprintf("%.2f", price)})
 	c.Ctx.ResponseWriter.WriteHeader(200)
 	c.ServeJSON()

@@ -271,6 +271,11 @@ type (
 		ConversionUomCode string  `json:"convertsion_uom_code"`
 		Price             float64 `json:"price"`
 	}
+
+	SimpleUomRtnJson struct {
+		Id   int    `json:"id"`
+		Code string `json:"code"`
+	}
 )
 
 func (t *ProductDivision) GetById(id int) (m *ProductDivision, err error) {
@@ -582,6 +587,35 @@ func (t *Product) GetAllListRecycle(keyword string) (m []SimpleProductRtn, err e
 	return m, err
 }
 
+func (t *Product) GetAllListSales(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id in (select id from product_types where is_sales = 1) and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllListPurchase(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id in (select id from product_types where is_purchase = 1) and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
+
+func (t *Product) GetAllListProduction(keyword string) (m []SimpleProductRtn, err error) {
+	o := orm.NewOrm()
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id in (select id from product_types where is_production = 1) and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+
+	if d == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
+}
 func (t *Product) Document(id, user_id int, folder_name string) (m []DocumentRtn) {
 	var doc Document
 	m = doc.GetDocument(id, folder_name)

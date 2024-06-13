@@ -829,6 +829,60 @@ func (c *ProductController) GetAllListRecycle() {
 	c.ServeJSON()
 }
 
+func (c *ProductController) GetAllListSales() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_product.GetAllListSales(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *ProductController) GetAllListPurchase() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_product.GetAllListPurchase(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *ProductController) GetAllListProduction() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_product.GetAllListProduction(keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
 func (c *ProductController) GetProductUom() {
 	var user_id int
 	sess := c.GetSession("profile")

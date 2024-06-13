@@ -230,6 +230,12 @@ type (
 		FullName  string `json:"full_name"`
 		CompanyId int    `json:"company_id"`
 	}
+
+	SimpleCompanyRtnJson struct {
+		Id   int    `json:"id"`
+		Code string `json:"code"`
+		Name string `json:"name"`
+	}
 )
 
 func (t *Company) GetById(id, user_id int) (m *CompanyDetailReturn, err error) {
