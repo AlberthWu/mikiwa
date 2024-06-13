@@ -675,10 +675,10 @@ func (c *PriceController) GetAll() {
 	status_ids := strings.TrimSpace(c.GetString("status_ids"))
 	issue_date := strings.TrimSpace(c.GetString("issue_date"))
 	updated_at := strings.TrimSpace(c.GetString("updated_at"))
-	sales_ids := strings.TrimSpace(c.GetString("sales_ids"))
 	division_ids := strings.TrimSpace(c.GetString("division_ids"))
 	type_ids := strings.TrimSpace(c.GetString("type_ids"))
 
+	price_type := "sales"
 	if issue_date == "" {
 		issueDate = nil
 
@@ -693,7 +693,7 @@ func (c *PriceController) GetAll() {
 		updatedat = &updated_at
 	}
 
-	d, err := t_price.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, 0, user_id, division_ids, type_ids, sales_ids, status_ids, issueDate, updatedat)
+	d, err := t_price.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, 0, user_id, division_ids, type_ids, status_ids, price_type, issueDate, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
