@@ -593,3 +593,10 @@ func (t *Product) GetConversion(qty float64, product_id, uom_id, user_id int) (m
 	o.Raw("call sp_ConvertUom(" + utils.Int2String(product_id) + "," + utils.Int2String(uom_id) + "," + utils.Float2String(qty) + "," + utils.Int2String(user_id) + ")").QueryRow(&m)
 	return m
 }
+
+func (t *Product) GetPrice(theDate string, customer_id, product_id, uom_id, user_id, method int, qty, disc_one, disc_two, disc_tpr float64) float64 {
+	o := orm.NewOrm()
+	var price float64 = 0
+	o.Raw("call fn_HargaGet('" + theDate + "'," + utils.Int2String(customer_id) + "," + utils.Int2String(product_id) + "," + utils.Int2String(uom_id) + "," + utils.Float2String(qty) + "," + utils.Float2String(disc_one) + "," + utils.Float2String(disc_two) + "," + utils.Float2String(disc_tpr) + "," + utils.Int2String(method) + "); ").QueryRow(&price)
+	return price
+}

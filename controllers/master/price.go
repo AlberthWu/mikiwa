@@ -88,6 +88,7 @@ func (c *PriceController) Post() {
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.EffectiveDate), "effective_date").Message("Is required")
 	valid.Required(ob.ProductId, "product_id").Message("Is required")
+	valid.Required(ob.CompanyIds, "company_id").Message("Is required")
 
 	if len(ob.Price) == 0 {
 		valid.AddError("price", "0 not allowed")
@@ -111,7 +112,7 @@ func (c *PriceController) Post() {
 		err = models.Companies().Filter("id", utils.String2Int(strings.TrimSpace(ch))).Filter("CompanyTypes__TypeId__Id", base.Customer).One(&company)
 		if err == orm.ErrNoRows {
 			c.Ctx.ResponseWriter.WriteHeader(401)
-			utils.ReturnHTTPError(&c.Controller, 401, "Customer division unregistered/Illegal data")
+			utils.ReturnHTTPError(&c.Controller, 401, "Customer unregistered/Illegal data")
 			c.ServeJSON()
 			return
 		}
@@ -563,7 +564,28 @@ func (c *PriceController) Put() {
 	}
 	c.ServeJSON()
 }
-func (c *PriceController) Delete()   {}
-func (c *PriceController) GetOne()   {}
-func (c *PriceController) GetAll()   {}
-func (c *PriceController) GetPrice() {}
+func (c *PriceController) Delete() {}
+func (c *PriceController) GetOne() {}
+func (c *PriceController) GetAll() {}
+func (c *PriceController) CalcPrice() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	customer_id, _ := c.GetInt("product_id")
+	product_id, _ := c.GetInt("product_id")
+	uom_id, _ := c.GetInt("uom_id")
+	disc_one, _ := c.GetFloat("disc_one")
+	disc_two, _ := c.GetFloat("disc_two")
+	disc_tpr, _ := c.GetFloat("disc_tpr")
+
+	if issue_date == "" {
+		issue_date = utils.GetSvrDate().Format("2006-01-02")
+	}
+	price := t_product.GetPrice(issue_date, customer_id, product_id, uom_id, user_id, 0, 1, disc_one, disc_two, disc_tpr)
+	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", map[string]interface{}{"price": fmt.Sprintf("%.2f", price)})
+	c.Ctx.ResponseWriter.WriteHeader(200)
+	c.ServeJSON()
+}
