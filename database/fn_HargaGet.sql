@@ -8,7 +8,6 @@ RETURNS decimal(18,2)
 
 BEGIN
 
-	declare price decimal(18,2);
 	declare prices decimal(18,2);
     declare priceSet int;
     
@@ -30,9 +29,8 @@ BEGIN
 			set prices = priceSet;
 		end if;
     end if;
-    
-    set price = (prices + ((prices*discOne)/100) + (prices + (prices*discOne)/100)*discTwo/100) + discTpr ;
-    return price;
+    return (prices + ((prices*discOne)/100) + (prices + (prices*discOne)/100)*discTwo/100) + discTpr ;
+
 
 END$$
 
