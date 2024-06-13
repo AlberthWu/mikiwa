@@ -2,7 +2,7 @@ SET GLOBAL log_bin_trust_function_creators = 1;
 
 DROP PROCEDURE IF EXISTS sp_Price;
 DELIMITER $$
-CREATE PROCEDURE sp_Price(theDate date,updatedAt date,uId int,priceTypeId varchar(50),divisionIds varchar(7),typeIds varchar(7),statusIds varchar(5),reportTypeId int,userId int,keyword varchar(255),in TheString varchar(8000),in TheParameter varchar(8000),in TheKeyword varchar(8000), in limitVal int, in offsetVal int ) 
+CREATE PROCEDURE sp_Price(theDate date,updatedAt date,uId int,priceTypeId varchar(50),divisionIds varchar(7),typeIds varchar(7),statusIds varchar(5),reportTypeId int,userId int,keyword varchar(255),in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int ) 
 BEGIN
 	declare keywordSet varchar(8000);
     declare theDateSet varchar(100);
@@ -80,14 +80,14 @@ BEGIN
 									deleted_at is null ",theDateSet,uIdSet,userIdSet,statusIdSet,updatedAtSet,divisionIdSet,typeIdSet,keywordSet,"
 								) x order by product_id,item_no;"));
 	else
-		SET @s =  (concat ("select id,effective_date,expired_date,customer_code,product_id,product_code,product_name,product_division_id,product_division_code,product_type_id,product_type_name,normal_price,disc_one,disc_one_desc,disc_two,disc_tpr,price,uom_id,uom_code,ratio,sure_name,status_id,status_data,
+		SET @s =  (concat ("select id,effective_date,expired_date,customer_code,product_id,product_code,product_name,product_division_id,product_division_code,product_type_id,product_type_name,normal_price,disc_one,disc_one_desc,disc_two,disc_tpr,price,uom_id,uom_code,ratio,sure_name,status_id,status_data
 								,'effective_date,expired_date,customer_code,product_code,product_name,sure_name,product_division_code,product_type_name,normal_price,disc_one_desc,disc_two_desc,disc_tpr_desc,price,status_data' field_key
 								,'Tgl efektif,Tgl exp,Pelanggan,Kode,Nama,Alias,Divisi,Tipe,Normal,Disc 1,Disc 2,Disc tpr,Harga,Status Data' field_label
 								,'effective_date,expired_date,customer_code,product_code,product_name,sure_name,product_division_code,product_type_name,normal_price,disc_one_desc,disc_two_desc,disc_tpr_desc,price,status_data' field_export
 								,'Tgl efektif,Tgl exp,Pelanggan,Kode,Nama,Alias,Divisi,Tipe,Normal,Disc 1,Disc 2,Disc tpr,Harga,Status Data' field_export_label
 								,'normal_price,price' field_int
 								,'' field_footer
-								,'price_id' field_level 
+								,'' field_level 
 							from (
 								select t0.id,effective_date,expired_date,GROUP_CONCAT(t3.company_code order by t3.company_code SEPARATOR '; ') customer_code,product_id,t1.product_code,t1.product_name,t1.product_division_id,t1.product_division_code,t1.product_type_id,t1.product_type_name,t1.normal_price,
 									disc_one,concat(disc_one,' %')  disc_one_desc,disc_two,concat(disc_two,' %') disc_two_desc,disc_tpr,concat('Rp',disc_tpr) disc_tpr_desc,
@@ -102,7 +102,7 @@ BEGIN
 									left join (select price_id,company_id,company_code,company_name from price_company t0 
 													left join (select id,code company_code,name company_name from companies) t1 on t1.id=t0.company_id) t3 on t3.price_id=t0.id
 								where deleted_at is null ",theDateSet,uIdSet,userIdSet,statusIdSet,updatedAtSet,divisionIdSet,typeIdSet,keywordSet,"
-								group by id,effective_date,expired_date,product_id,product_code,product_name,product_division_id,product_division_code,product_type_id,product_type_name,normal_price,disc_one,disc_two,disc_tpr,uom_id,uom_code,ratio,sure_name,status_id,status_data) x where dr=1 ",ColumnSet,limitSet," ;"));
+								group by id,effective_date,expired_date,product_id,t1.product_code,t1.product_name,t1.product_division_id,t1.product_division_code,t1.product_type_id,t1.product_type_name,t1.normal_price,disc_one,disc_two,disc_tpr,uom_id,t2.uom_code,ratio,sure_name,status_id) x where dr=1 ",ColumnSet,limitSet," ;"));
     end if;
 	PREPARE stmt FROM @s;
 	EXECUTE stmt;

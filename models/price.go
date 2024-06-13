@@ -109,7 +109,20 @@ func (t *PriceProductUom) Update(fields ...string) error {
 	return nil
 }
 
+type (
+	PriceRtnJson struct {
+		Id int `json:""`
+	}
+
+	PriceProductUomRnJson struct {
+	}
+
+	PriceRtn struct {
+	}
+)
+
 func (t *Price) GetById() (m *Price, err error) {
 	return m, err
 }
+
 func (t *Price) GetAll() {}

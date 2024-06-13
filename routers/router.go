@@ -149,8 +149,8 @@ func init() {
 	beego.Router("/v1/bank/list", &master.BankController{}, "get:GetAllList")
 
 	// price
-	beego.Router("/v1/price", &master.PriceController{}, "post:Post;get:GetAll")
-	beego.Router("/v1/price/:id", &master.PriceController{}, "put:Put;get:GetOne;delete:Delete")
-	beego.Router("/v1/price/calc", &master.PriceController{}, "get:CalcPrice")
+	beego.Router("/v1/price/sales", &master.PriceController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/price/sales/:id", &master.PriceController{}, "put:Put;get:GetOne;delete:Delete")
+	beego.Router("/v1/price/sales/calc", &master.PriceController{}, "get:CalcPrice")
 
 }
