@@ -835,9 +835,9 @@ func (c *ProductController) GetProductUom() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
-	product_id, _ := c.GetInt("product_id")
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	uom_id, _ := c.GetInt("uom_id")
-	d := t_product.GetProductUom(product_id, uom_id, user_id)
+	d := t_product.GetProductUom(id, uom_id, user_id)
 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	c.ServeJSON()
 }
