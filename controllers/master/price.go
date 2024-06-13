@@ -325,7 +325,7 @@ func (c *PriceController) Put() {
 
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	var querydata models.Price
-	err = models.Prices().Filter("id", id).Filter("deleted_at__isnull", true).One(&querydata)
+	err = models.Prices().Filter("id", id).Filter("deleted_at__isnull", true).Filter("price_type", price_type).One(&querydata)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, "Price id unregistered/Illegal data")
@@ -564,8 +564,70 @@ func (c *PriceController) Put() {
 	}
 	c.ServeJSON()
 }
-func (c *PriceController) Delete() {}
-func (c *PriceController) GetOne() {}
+func (c *PriceController) Delete() {
+	var user_id, form_id int
+	var err error
+	var user_name string
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+		user_name = sess.(map[string]interface{})["username"].(string)
+	}
+	form_id = base.FormName(form_price)
+	delete_aut := models.CheckPrivileges(user_id, form_id, base.Delete)
+	if !delete_aut {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Delete not authorize", map[string]interface{}{"message": "Please contact administrator"})
+		c.ServeJSON()
+		return
+	}
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	price_type := "sales"
+
+	var querydata models.Price
+	err = models.Prices().Filter("id", id).Filter("deleted_at__isnull", true).Filter("price_type", price_type).One(&querydata)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, "Price id unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
+	models.Prices().Filter("id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
+	models.PriceProductUoms().Filter("price_id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
+
+	utils.ReturnHTTPError(&c.Controller, 200, "soft delete success")
+	c.ServeJSON()
+}
+func (c *PriceController) GetOne() {
+	// var user_id int
+	// sess := c.GetSession("profile")
+	// if sess != nil {
+	// 	user_id = sess.(map[string]interface{})["id"].(int)
+	// }
+	// id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	// v, err := t_price.GetById(id, user_id)
+	// code, message := base.DecodeErr(err)
+	// if err == orm.ErrNoRows {
+	// 	code = 200
+	// 	c.Ctx.ResponseWriter.WriteHeader(code)
+	// 	utils.ReturnHTTPError(&c.Controller, code, "No data")
+	// } else if err != nil {
+	// 	c.Ctx.ResponseWriter.WriteHeader(code)
+	// 	utils.ReturnHTTPError(&c.Controller, code, message)
+	// } else {
+
+	// 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, v)
+	// }
+	// c.ServeJSON()
+}
 func (c *PriceController) GetAll() {}
 func (c *PriceController) CalcPrice() {
 	var user_id int
