@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE PROCEDURE sp_Product(updatedAt date,uId int,divisionIds varchar(7),typeIds varchar(7),purchaseIds varchar(5),salesIds varchar(5),productionIds varchar(5), statusIds varchar(5),userId int, reportType int, keyword varchar(255), in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000),in limitVal int, in offsetVal int )
 BEGIN
 	declare keywordSet varchar(8000);
+    declare theDateSet varchar(100);
     declare updatedAtSet   varchar(255);
     declare userIdSet   varchar(255);
     declare uIdSet   varchar(255);
@@ -14,8 +15,6 @@ BEGIN
     declare productionIdSet   varchar(255);
     declare typeIdSet   varchar(255);
     declare statusIdSet   varchar(255);
-    
-    declare limitSet  varchar(255);
     declare offsetSet  varchar(255);
     
     DECLARE Rn int;
@@ -64,17 +63,17 @@ BEGIN
     
     -- product_uom
     if reportType = 0 then
-		SET @s =  (concat ("select product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default
-								,'product_code,product_name,uom_code,ratio,is_default' field_key
-								,'Kode,Nama,Uom,Ratio,Default' field_label
-								,'product_code,product_name,uom_code,ratio,is_default' field_export
-								,'Kode,Nama,Uom,Ratio,Default' field_export_label
-								,'ratio' field_int
+		SET @s =  (concat ("select product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,price
+								,'product_code,product_name,uom_code,ratio,is_default,price' field_key
+								,'Kode,Nama,Uom,Ratio,Default,Harga' field_label
+								,'product_code,product_name,uom_code,ratio,is_default,price' field_export
+								,'Kode,Nama,Uom,Ratio,Default,Harga' field_export_label
+								,'ratio,price' field_int
 								,'' field_footer
 								,'' field_level 
 							from 
 								(select 
-									product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default 
+									product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,price 
 								from 
 									product_uom t0
 								left join 
