@@ -254,10 +254,13 @@ type (
 	}
 
 	ProductConversionRtnJson struct {
+		PriceId           int     `json:"price_id"`
 		ProductId         int     `json:"product_id"`
 		ProductCode       string  `json:"product_code"`
 		ProductName       string  `json:"product_name"`
+		Price             float64 `json:"price"`
 		Qty               float64 `json:"qty"`
+		ItemNo            int     `json:"item_no"`
 		UomId             int     `json:"uom_id"`
 		UomCode           string  `json:"uom_code"`
 		Ratio             float64 `json:"ratio"`
@@ -269,7 +272,6 @@ type (
 		ConversionQty     float64 `json:"conversion_qty"`
 		ConversionUomId   int     `json:"convertsion_uom_id"`
 		ConversionUomCode string  `json:"convertsion_uom_code"`
-		Price             float64 `json:"price"`
 	}
 
 	SimpleUomRtnJson struct {
@@ -547,9 +549,13 @@ func (t *Product) GetAllListWip(keyword string) (m []SimpleProductRtn, err error
 	return m, err
 }
 
-func (t *Product) GetAllListFinishing(keyword string) (m []SimpleProductRtn, err error) {
+func (t *Product) GetAllListFinishing(keyword string, division_id int) (m []SimpleProductRtn, err error) {
 	o := orm.NewOrm()
-	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 3 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') ").QueryRows(&m)
+	var query string
+	if division_id != 0 {
+		query = " and product_division_id = " + utils.Int2String(division_id) + " "
+	}
+	d, err := o.Raw("select id,product_code,product_name,serial_number,lead_time,uom_id,uom_code from products where deleted_at is null and status_id = 1 and product_type_id = 3 and (product_code like '%" + keyword + "%' or product_name like '%" + keyword + "%' or serial_number like '%" + keyword + "%') " + query + " ").QueryRows(&m)
 
 	if d == 0 && err == nil {
 		err = orm.ErrNoRows
@@ -622,9 +628,9 @@ func (t *Product) Document(id, user_id int, folder_name string) (m []DocumentRtn
 	return m
 }
 
-func (t *Product) GetConversion(qty float64, product_id, uom_id, user_id int) (m *ProductConversionRtnJson) {
+func (t *Product) GetConversion(issue_date string, qty float64, customer_id, product_id, uom_id, user_id int) (m *ProductConversionRtnJson) {
 	o := orm.NewOrm()
-	o.Raw("call sp_ConvertUom(" + utils.Int2String(product_id) + "," + utils.Int2String(uom_id) + "," + utils.Float2String(qty) + "," + utils.Int2String(user_id) + ")").QueryRow(&m)
+	o.Raw("call sp_ConvertUom('" + issue_date + "'," + utils.Int2String(product_id) + "," + utils.Int2String(customer_id) + "," + utils.Int2String(uom_id) + "," + utils.Float2String(qty) + "," + utils.Int2String(user_id) + ")").QueryRow(&m)
 	return m
 }
 
