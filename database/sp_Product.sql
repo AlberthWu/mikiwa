@@ -15,6 +15,7 @@ BEGIN
     declare productionIdSet   varchar(255);
     declare typeIdSet   varchar(255);
     declare statusIdSet   varchar(255);
+    declare limitSet  varchar(255);
     declare offsetSet  varchar(255);
     
     DECLARE Rn int;

@@ -43,6 +43,16 @@ const (
 	Insurance      = 12
 )
 
+const (
+	OpenSo     = 1
+	ConfirmSo  = 2
+	ProgressSo = 3
+	DoneSo     = 4
+	RejectSo   = 5
+	CloseSo    = 6
+	VoidSo     = 99
+)
+
 func (c *BaseController) Prepare() {
 	o := orm.NewOrm()
 	sess := c.GetSession("profile")

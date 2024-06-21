@@ -759,8 +759,9 @@ func (c *ProductController) GetAllListWip() {
 
 func (c *ProductController) GetAllListFinishing() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
+	product_division_id, _ := c.GetInt("product_division_id")
 
-	d, err := t_product.GetAllListFinishing(keyword)
+	d, err := t_product.GetAllListFinishing(keyword, product_division_id)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -904,8 +905,13 @@ func (c *ProductController) GetConversion() {
 	}
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	uom_id, _ := c.GetInt("uom_id")
+	customer_id, _ := c.GetInt("customer_id")
 	qty, _ := c.GetFloat("qty")
-	d := t_product.GetConversion(qty, id, uom_id, user_id)
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	if issue_date == "" {
+		issue_date = utils.GetSvrDate().Format("2006-01-02")
+	}
+	d := t_product.GetConversion(issue_date, qty, id, customer_id, uom_id, user_id)
 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	c.ServeJSON()
 }

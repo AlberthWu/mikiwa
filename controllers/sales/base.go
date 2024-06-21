@@ -3,6 +3,7 @@ package controllers
 import (
 	base "mikiwa/controllers"
 	"mikiwa/models"
+	"sync"
 )
 
 type BaseController struct {
@@ -15,6 +16,7 @@ type DeleteBody struct {
 
 var errcode int
 var errmessage string
+var wg *sync.WaitGroup
 
 var form_sales_order = "sales_order"
 
