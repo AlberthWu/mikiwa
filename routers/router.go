@@ -160,5 +160,6 @@ func init() {
 
 	// sales
 	// sales_order
-	beego.Router("/v1/sales/order", &sales.SalesOrderController{}, "post:Post")
+	beego.Router("/v1/sales/order", &sales.SalesOrderController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/sales/order/:id", &sales.SalesOrderController{}, "put:Put;get:GetOne;delete:Delete")
 }
