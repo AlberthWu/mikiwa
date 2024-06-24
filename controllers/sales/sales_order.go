@@ -26,7 +26,9 @@ func (c *SalesOrderController) Prepare() {
 type (
 	InputHeaderSalesOrder struct {
 		IssueDate       string                  `json:"issue_date"`
+		OutletId        int                     `json:"outlet_id"`
 		CustomerId      int                     `json:"customer_id"`
+		PlantId         int                     `json:"plant_id"`
 		EmployeeId      int                     `json:"employee_id"`
 		LeadTime        int                     `json:"lead_time"`
 		StatusId        int8                    `json:"status_id"`
@@ -83,6 +85,7 @@ func (c *SalesOrderController) Post() {
 	valid.Required(ob.LeadTime, "lead_time").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 	valid.Required(ob.EmployeeId, "employee_id").Message("Is required")
+	valid.Required(ob.OutletId, "outlet_id").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.DeliveryAddress), "delivery_address").Message("Is required")
 
 	if len(ob.Detail) == 0 {
@@ -101,6 +104,7 @@ func (c *SalesOrderController) Post() {
 	}
 
 	var customers models.Company
+	var plants models.Plant
 	err = models.Companies().Filter("id", ob.CustomerId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Customer).One(&customers)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(401)
@@ -119,6 +123,53 @@ func (c *SalesOrderController) Post() {
 	if customers.Status == 0 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", customers.Code))
+		c.ServeJSON()
+		return
+	}
+
+	if ob.PlantId != 0 {
+		models.Plants().Filter("deleted_at__isnull", true).Filter("id", ob.PlantId).Filter("company_id", ob.CustomerId).One(&plants)
+		if err == orm.ErrNoRows {
+			c.Ctx.ResponseWriter.WriteHeader(401)
+			utils.ReturnHTTPError(&c.Controller, 401, "Plant unregistered/Illegal data")
+			c.ServeJSON()
+			return
+		}
+
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(401)
+			utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+			c.ServeJSON()
+			return
+		}
+
+		if plants.Status == 0 {
+			c.Ctx.ResponseWriter.WriteHeader(402)
+			utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", plants.Name))
+			c.ServeJSON()
+			return
+		}
+	}
+
+	var outlet models.Plant
+	o.Raw("select * from plants where deleted_at is null and id = " + utils.Int2String(ob.OutletId) + " and company_id in (select company_id from company_type where type_id = " + utils.Int2String(base.Internal) + " )").QueryRow(&outlet)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Outlet unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
+	if outlet.Status == 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", outlet.Name))
 		c.ServeJSON()
 		return
 	}
@@ -231,8 +282,12 @@ func (c *SalesOrderController) Post() {
 		SeqNo:           seqno,
 		DueDate:         dueDate,
 		PoolId:          1,
+		OutletId:        ob.OutletId,
+		OutletName:      outlet.Name,
 		CustomerId:      ob.CustomerId,
 		CustomerCode:    customers.Code,
+		PlantId:         ob.PlantId,
+		PlantName:       plants.Name,
 		Terms:           customers.Terms,
 		DeliveryAddress: ob.DeliveryAddress,
 		EmployeeId:      ob.EmployeeId,
