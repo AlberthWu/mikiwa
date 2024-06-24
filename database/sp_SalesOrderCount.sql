@@ -1,8 +1,8 @@
 SET GLOBAL log_bin_trust_function_creators = 1;
 
-DROP PROCEDURE IF EXISTS sp_SalesOrder;
+DROP PROCEDURE IF EXISTS sp_SalesOrderCount;
 DELIMITER $$
-CREATE PROCEDURE sp_SalesOrder(theDate date,dueDate date,updatedAt date,uId int,employeeIds varchar(15),outletIds varchar(15),customerIds varchar(15),plantId int,productIds varchar(15),statusIds varchar(15),reportTypeId int,userId int,keyword varchar(255),in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int ) 
+CREATE PROCEDURE sp_SalesOrderCount(theDate date,dueDate date,updatedAt date,uId int,employeeIds varchar(15),outletIds varchar(15),customerIds varchar(15),plantId int,productIds varchar(15),statusIds varchar(15),reportTypeId int,userId int,keyword varchar(255),in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int ) 
 BEGIN
 	declare keywordSet varchar(8000);
     declare theDateSet varchar(100);
@@ -65,7 +65,7 @@ BEGIN
     SET limitSet = case when LimitVal is null then '' else concat(" limit ",offsetVal,",",limitVal)    end;
 	if reportTypeId = 0 then
 		set uIdSet = case when (uId is null  or uId = 0) then '' else concat(" and t0.price_id in (",uId,")")   end;
-		SET @s =  (concat ("select id,sales_order_id,reference_no,item_no,product_id,product_code,product_name,qty,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,normal_price,price_id,price,disc1,disc1_amount,disc2,disc2_amount,disc_tpr,total_disc
+		SET @s =  (concat ("select count(id) rn from (select id,sales_order_id,reference_no,item_no,product_id,product_code,product_name,qty,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,normal_price,price_id,price,disc1,disc1_amount,disc2,disc2_amount,disc_tpr,total_disc
 								,nett_price,total,convertion_qty,conversion_uom_id,conversion_uom_code,status_data 
                                 ,'product_code,product_name,qty,uom_code,ratio,packaging_code,final_qty,final_uom_code,price,disc1,disc2,disc_tpr,nett_price,total,status_data' field_key
                                 ,'Kode,Nama,Qty,Sat,@,Sat,Total qty,Sat,Harga,Disc 1(%),Disc 2(%),Disc (Rp),Harga nett,Jumlah,Status Data' field_label
@@ -88,9 +88,9 @@ BEGIN
 										left join (select id,`code` customer_code,`name` customer_name from companies) t3 on t3.id = t0.customer_id
 										left join (select id,`name` plant_name from plants) t4 on t4.id = t0.plant_id
 										left join (select id,`name` employee_name from employees) t5 on t5.id = t0.employee_id
-									where deleted_at is null ",theDateSet,dueDateSet,updatedAtSet,uIdSet,userIdSet,statusIdSet,employeeIdsSet,outletIdsSet,customerIdsSet,plantIdSet,productIdsSet,keywordSet,")) x ;"));
+									where deleted_at is null ",theDateSet,dueDateSet,updatedAtSet,uIdSet,userIdSet,statusIdSet,employeeIdsSet,outletIdsSet,customerIdsSet,plantIdSet,productIdsSet,keywordSet,")) x ) y ;"));
 	else
-		SET @s =  (concat ("select id,id sales_order_id,reference_no,issue_date,due_date,lead_time,pool_id,pool_name,outlet_id,outlet_name,customer_id,customer_code,customer_name,plant_id,plant_name,full_name,terms,delivery_address,employee_id,employee_name
+		SET @s =  (concat ("select count(id) rn from (select id,id sales_order_id,reference_no,issue_date,due_date,lead_time,pool_id,pool_name,outlet_id,outlet_name,customer_id,customer_code,customer_name,plant_id,plant_name,full_name,terms,delivery_address,employee_id,employee_name
 								,subtotal,total_disc,dpp,ppn,ppn_amount,total
                                 ,status_id,status_description,status_data
 								,'reference_no,issue_date,due_date,lead_time,outlet_name,full_name,terms,delivery_address,employee_name,subtotal,total_disc,dpp,ppn_amount,total,status_description,status_data' field_key
@@ -112,7 +112,7 @@ BEGIN
                                     left join (select id,`name` plant_name from plants) t4 on t4.id = t0.plant_id
                                     left join (select id,`name` employee_name from employees) t5 on t5.id = t0.employee_id
 								where deleted_at is null ",theDateSet,dueDateSet,updatedAtSet,uIdSet,userIdSet,statusIdSet,employeeIdsSet,outletIdsSet,customerIdsSet,plantIdSet,productIdsSet,keywordSet,"
-								) x where id != 0",ColumnSet,limitSet," ;"));
+								) x where id != 0",ColumnSet,") y ;"));
 	end if;
 	PREPARE stmt FROM @s;
 	EXECUTE stmt;

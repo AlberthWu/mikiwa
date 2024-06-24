@@ -6,6 +6,7 @@ import (
 	base "mikiwa/controllers"
 	"mikiwa/models"
 	"mikiwa/utils"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -400,107 +401,94 @@ func (c *SalesOrderController) Post() {
 
 func (c *SalesOrderController) Put()    {}
 func (c *SalesOrderController) Delete() {}
-func (c *SalesOrderController) GetOne() {}
-func (c *SalesOrderController) GetAll() {}
+func (c *SalesOrderController) GetOne() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	v, err := t_sales_order.GetById(id, user_id)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
 
-// t_sales_order = models.SalesOrder{
-// 	IssueDate:       thedate,
-// 	ReferenceNo:     referenceno,
-// 	SeqNo:           seqno,
-// 	DueDate:         dueDate,
-// 	PoolId:          1,
-// 	CustomerId:      ob.CustomerId,
-// 	CustomerCode:    customers.Code,
-// 	Terms:           customers.Terms,
-// 	DeliveryAddress: ob.DeliveryAddress,
-// 	EmployeeId:      ob.EmployeeId,
-// 	EmployeeName:    "",
-// 	LeadTime:        ob.LeadTime,
-// 	Subtotal:        total,
-// 	TotalDisc:       totalDisc,
-// 	Dpp:             0,
-// 	Ppn:             0,
-// 	PpnAmount:       0,
-// 	Total:           0,
-// 	StatusId:        ob.StatusId,
-// 	CreatedBy:       user_name,
-// 	UpdatedBy:       user_name,
-// }
-// _, err_ := o.Insert(&t_sales_order)
-// errcode, errmessage = base.DecodeErr(err_)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, v)
+	}
+	c.ServeJSON()
+}
+func (c *SalesOrderController) GetAll() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	var issueDate, updatedat, dueDate *string
 
-// if err_ != nil {
-// 	tx.Rollback()
-// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
-// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-// 	c.ServeJSON()
-// 	return
-// } else {
-// 	wg = new(sync.WaitGroup)
-// 	var mutex sync.Mutex
-// 	for k, v := range ob.Detail {
-// 		i = 0
-// 		wg.Add(1)
-// 		go func(k int, v InputDetailSalesOrder) {
-// 			priceRtn = products.GetConversion(ob.IssueDate, v.Qty, ob.CustomerId, v.ProductId, v.UomId, user_id)
-// 			defer wg.Done()
-// 			mutex.Lock()
-// 			if v.Id == 0 {
-// 				inputDetail = append(inputDetail, models.SalesOrderDetail{
-// 					SalesOrderId:      t_sales_order.Id,
-// 					ReferenceNo:       referenceno,
-// 					IssueDate:         thedate,
-// 					DueDate:           dueDate,
-// 					ItemNo:            k + 1,
-// 					ProductId:         v.ProductId,
-// 					ProductCode:       priceRtn.ProductCode,
-// 					Qty:               v.Qty,
-// 					UomId:             v.UomId,
-// 					UomCode:           priceRtn.UomCode,
-// 					Ratio:             priceRtn.Ratio,
-// 					PackagingId:       priceRtn.PackagingId,
-// 					PackagingCode:     priceRtn.PackagingCode,
-// 					FinalQty:          priceRtn.FinalQty,
-// 					FinalUomId:        priceRtn.FinalUomId,
-// 					FinalUomCode:      priceRtn.FinalUomCode,
-// 					NormalPrice:       priceRtn.NormalPrice,
-// 					PriceId:           priceRtn.PriceId,
-// 					Price:             priceRtn.Price,
-// 					Disc1:             v.Disc1,
-// 					Disc2:             v.Disc2,
-// 					DiscTpr:           v.DiscTpr,
-// 					TotalDisc:         0,
-// 					NettPrice:         0,
-// 					Total:             0,
-// 					LeadTime:          v.LeadTime,
-// 					ConversionQty:     priceRtn.ConversionQty,
-// 					ConversionUomId:   priceRtn.ConversionUomId,
-// 					ConversionUomCode: priceRtn.ConversionUomCode,
-// 					CreatedBy:         user_name,
-// 					UpdatedBy:         user_name,
-// 				})
-// 				i += 1
-// 			}
-// 			mutex.Unlock()
-// 		}(k, v)
-// 	}
-// 	wg.Wait()
-// 	_, err = o.InsertMulti(i, inputDetail)
-// 	errcode, errmessage = base.DecodeErr(err)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		c.Ctx.ResponseWriter.WriteHeader(errcode)
-// 		utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-// 		c.ServeJSON()
-// 		return
-// 	}
-// }
+	currentPage, _ := c.GetInt("page")
+	if currentPage == 0 {
+		currentPage = 1
+	}
 
-// errTrans = tx.Commit()
-// errcode, errmessage = base.DecodeErr(errTrans)
-// if errTrans != nil {
-// 	tx.Rollback()
-// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
-// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-// }
-// c.ServeJSON()
+	pageSize, _ := c.GetInt("pagesize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+	allsize, _ := c.GetInt("allsize")
+
+	status_ids := strings.TrimSpace(c.GetString("status_ids"))
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	due_date := strings.TrimSpace(c.GetString("due_date"))
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	outlet_ids := strings.TrimSpace(c.GetString("outlet_ids"))
+	employee_ids := strings.TrimSpace(c.GetString("employee_ids"))
+	customer_ids := strings.TrimSpace(c.GetString("customer_ids"))
+	plant_id, _ := c.GetInt("plant_id")
+	product_ids := strings.TrimSpace(c.GetString("product_ids"))
+
+	if issue_date == "" {
+		issueDate = nil
+
+	} else {
+		issueDate = &issue_date
+	}
+
+	if due_date == "" {
+		dueDate = nil
+
+	} else {
+		dueDate = &due_date
+	}
+
+	if updated_at == "" {
+		updatedat = nil
+
+	} else {
+		updatedat = &updated_at
+	}
+
+	d, err := t_sales_order.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, 0, plant_id, employee_ids, outlet_ids, customer_ids, status_ids, product_ids, issueDate, dueDate, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
