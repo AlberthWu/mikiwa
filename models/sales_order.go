@@ -139,11 +139,11 @@ func (t *SalesOrderDetail) Update(fields ...string) error {
 	return nil
 }
 
-func (t *SalesOrder) InsertWithDetail(m SalesOrder, d []SalesOrderDetail) (err error) {
+func (t *SalesOrder) InsertWithDetail(m SalesOrder, d []SalesOrderDetail) (data *SalesOrder, err error) {
 	o := orm.NewOrm()
 
 	if _, err = o.Insert(&m); err != nil {
-		return err
+		return nil, err
 	}
 
 	for i := range d {
@@ -153,10 +153,10 @@ func (t *SalesOrder) InsertWithDetail(m SalesOrder, d []SalesOrderDetail) (err e
 	_, err = o.InsertMulti(len(d), d)
 	if err != nil {
 		o.Raw("update sales_order set deleted_at = now(),deleted_by = 'Failed' where id = " + utils.Int2String(m.Id)).Exec()
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &m, nil
 }
 
 func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesOrderDetail) error {

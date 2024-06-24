@@ -385,7 +385,7 @@ func (c *SalesOrderController) Post() {
 	}
 	wg.Wait()
 
-	err_ := t_sales_order.InsertWithDetail(t_sales_order, inputDetail)
+	d, err_ := t_sales_order.InsertWithDetail(t_sales_order, inputDetail)
 	errcode, errmessage = base.DecodeErr(err_)
 	if err_ != nil {
 		c.Ctx.ResponseWriter.WriteHeader(errcode)
@@ -393,7 +393,14 @@ func (c *SalesOrderController) Post() {
 		c.ServeJSON()
 		return
 	} else {
-		c.Data["json"] = "Success"
+		v, err := t_sales_order.GetById(d.Id, user_id)
+		errcode, errmessage = base.DecodeErr(err)
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(errcode)
+			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+		} else {
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, errcode, errmessage, v)
+		}
 	}
 
 	c.ServeJSON()
