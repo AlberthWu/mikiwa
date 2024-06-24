@@ -27,7 +27,7 @@ type (
 	InputHeaderPrice struct {
 		EffectiveDate string             `json:"effective_date"`
 		ExpiredDate   string             `json:"expired_date"`
-		CompanyId     int                `json:"company_id"`
+		CustomerId    int                `json:"customer_id"`
 		ProductId     int                `json:"product_id"`
 		SureName      string             `json:"sure_name"`
 		StatusId      int8               `json:"status_id"`
@@ -88,7 +88,7 @@ func (c *PriceController) Post() {
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.EffectiveDate), "effective_date").Message("Is required")
 	valid.Required(ob.ProductId, "product_id").Message("Is required")
-	valid.Required(ob.CompanyId, "company_id").Message("Is required")
+	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 
 	if len(ob.Price) == 0 {
 		valid.AddError("price", "0 not allowed")
@@ -106,7 +106,7 @@ func (c *PriceController) Post() {
 	}
 
 	var company models.Company
-	err = models.Companies().Filter("id", ob.CompanyId).Filter("CompanyTypes__TypeId__Id", base.Customer).Filter("deleted_at__isnull", true).One(&company)
+	err = models.Companies().Filter("id", ob.CustomerId).Filter("CompanyTypes__TypeId__Id", base.Customer).Filter("deleted_at__isnull", true).One(&company)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(401)
 		utils.ReturnHTTPError(&c.Controller, 401, "Customer unregistered/Illegal data")
@@ -224,7 +224,7 @@ func (c *PriceController) Post() {
 	t_price = models.Price{
 		EffectiveDate: thedate,
 		ExpiredDate:   expireddate,
-		CompanyId:     ob.CompanyId,
+		CompanyId:     ob.CustomerId,
 		CompanyCode:   company.Code,
 		ProductId:     ob.ProductId,
 		ProductCode:   products.ProductCode,
@@ -274,7 +274,7 @@ func (c *PriceController) Post() {
 		// disc_two := (ob.Price - disc_one) * ob.DiscTwo / 100
 		// price := ob.Price - disc_one - disc_two - ob.DiscTpr
 
-		_, err_ = t_price_company.InsertM2M(d.Id, utils.Int2String(ob.CompanyId))
+		_, err_ = t_price_company.InsertM2M(d.Id, utils.Int2String(ob.CustomerId))
 		errcode, errmessage = base.DecodeErr(err_)
 		if err_ != nil {
 			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
@@ -370,7 +370,7 @@ func (c *PriceController) Put() {
 	}
 
 	var company models.Company
-	err = models.Companies().Filter("id", ob.CompanyId).Filter("CompanyTypes__TypeId__Id", base.Customer).Filter("deleted_at__isnull", true).One(&company)
+	err = models.Companies().Filter("id", ob.CustomerId).Filter("CompanyTypes__TypeId__Id", base.Customer).Filter("deleted_at__isnull", true).One(&company)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(401)
 		utils.ReturnHTTPError(&c.Controller, 401, "Customer unregistered/Illegal data")
@@ -502,7 +502,7 @@ func (c *PriceController) Put() {
 	t_price.Id = id
 	t_price.EffectiveDate = thedate
 	t_price.ExpiredDate = expireddate
-	t_price.CompanyId = ob.CompanyId
+	t_price.CompanyId = ob.CustomerId
 	t_price.CompanyCode = company.Code
 	t_price.ProductId = ob.ProductId
 	t_price.ProductCode = products.ProductCode
@@ -566,7 +566,7 @@ func (c *PriceController) Put() {
 		// disc_two := (ob.Price - disc_one) * ob.DiscTwo / 100
 		// price := ob.Price - disc_one - disc_two - ob.DiscTpr
 
-		_, err_ = t_price_company.InsertM2M(id, utils.Int2String(ob.CompanyId))
+		_, err_ = t_price_company.InsertM2M(id, utils.Int2String(ob.CustomerId))
 		errcode, errmessage = base.DecodeErr(err_)
 		if err_ != nil {
 			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
