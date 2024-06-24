@@ -10,33 +10,38 @@ import (
 
 type (
 	SalesOrder struct {
-		Id              int       `json:"id" orm:"column(id);auto;pk"`
-		ReferenceNo     string    `json:"reference_no" orm:"column(reference_no)"`
-		SeqNo           int       `json:"seq_no" orm:"column(seq_no)"`
-		IssueDate       time.Time `json:"issue_date" orm:"column(issue_date);type(date)"`
-		DueDate         time.Time `json:"due_date" orm:"column(due_date);type(date)"`
-		PoolId          int       `json:"pool_id" orm:"column(pool_id)"`
-		PoolName        string    `json:"pool_name" orm:"column(pool_name)"`
-		CustomerId      int       `json:"customer_id" orm:"column(customer_id)"`
-		CustomerCode    string    `json:"customer_code" orm:"column(customer_code)"`
-		Terms           int       `json:"terms" orm:"column(terms)"`
-		DeliveryAddress string    `json:"delivery_address" orm:"column(delivery_address)"`
-		EmployeeId      int       `json:"employee_id" orm:"column(employee_id)"`
-		EmployeeName    string    `json:"employee_name" orm:"column(employee_name)"`
-		LeadTime        int       `json:"lead_time" orm:"column(lead_time)"`
-		Subtotal        float64   `json:"subtotal" orm:"column(subtotal);digits(18);decimals(2);default(0)"`
-		TotalDisc       float64   `json:"total_disc" orm:"column(total_disc);digits(18);decimals(2);default(0)"`
-		Dpp             float64   `json:"dpp" orm:"column(dpp);digits(18);decimals(2);default(0)"`
-		Ppn             int       `json:"ppn" orm:"column(ppn)"`
-		PpnAmount       float64   `json:"ppn_amount" orm:"column(ppn_amount);digits(18);decimals(2);default(0)"`
-		Total           float64   `json:"total" orm:"column(total);digits(18);decimals(2);default(0)"`
-		StatusId        int8      `json:"status_id" orm:"column(status_id)"`
-		CreatedAt       time.Time `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
-		UpdatedAt       time.Time `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
-		DeletedAt       time.Time `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
-		CreatedBy       string    `json:"created_by" orm:"column(created_by)"`
-		UpdatedBy       string    `json:"updated_by" orm:"column(updated_by)"`
-		DeletedBy       string    `json:"deleted_by" orm:"column(deleted_by)"`
+		Id                int       `json:"id" orm:"column(id);auto;pk"`
+		ReferenceNo       string    `json:"reference_no" orm:"column(reference_no)"`
+		SeqNo             int       `json:"seq_no" orm:"column(seq_no)"`
+		IssueDate         time.Time `json:"issue_date" orm:"column(issue_date);type(date)"`
+		DueDate           time.Time `json:"due_date" orm:"column(due_date);type(date)"`
+		PoolId            int       `json:"pool_id" orm:"column(pool_id)"`
+		PoolName          string    `json:"pool_name" orm:"column(pool_name)"`
+		OutletId          int       `json:"outlet_id" orm:"column(outlet_id)"`
+		OutletName        string    `json:"outlet_name" orm:"column(outlet_name)"`
+		CustomerId        int       `json:"customer_id" orm:"column(customer_id)"`
+		CustomerCode      string    `json:"customer_code" orm:"column(customer_code)"`
+		PlantId           int       `json:"plant_id" orm:"column(plant_id)"`
+		PlantName         string    `json:"plant_name" orm:"column(plant_name)"`
+		Terms             int       `json:"terms" orm:"column(terms)"`
+		DeliveryAddress   string    `json:"delivery_address" orm:"column(delivery_address)"`
+		EmployeeId        int       `json:"employee_id" orm:"column(employee_id)"`
+		EmployeeName      string    `json:"employee_name" orm:"column(employee_name)"`
+		LeadTime          int       `json:"lead_time" orm:"column(lead_time)"`
+		Subtotal          float64   `json:"subtotal" orm:"column(subtotal);digits(18);decimals(2);default(0)"`
+		TotalDisc         float64   `json:"total_disc" orm:"column(total_disc);digits(18);decimals(2);default(0)"`
+		Dpp               float64   `json:"dpp" orm:"column(dpp);digits(18);decimals(2);default(0)"`
+		Ppn               int       `json:"ppn" orm:"column(ppn)"`
+		PpnAmount         float64   `json:"ppn_amount" orm:"column(ppn_amount);digits(18);decimals(2);default(0)"`
+		Total             float64   `json:"total" orm:"column(total);digits(18);decimals(2);default(0)"`
+		StatusId          int8      `json:"status_id" orm:"column(status_id)"`
+		StatusDescription string    `json:"status_description" orm:"column(status_description)"`
+		CreatedAt         time.Time `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
+		UpdatedAt         time.Time `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
+		DeletedAt         time.Time `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
+		CreatedBy         string    `json:"created_by" orm:"column(created_by)"`
+		UpdatedBy         string    `json:"updated_by" orm:"column(updated_by)"`
+		DeletedBy         string    `json:"deleted_by" orm:"column(deleted_by)"`
 	}
 
 	SalesOrderDetail struct {
@@ -154,10 +159,46 @@ func (t *SalesOrder) InsertWithDetail(m SalesOrder, d []SalesOrderDetail) (err e
 	return nil
 }
 
-func (t *SalesOrder) UpdateWithDetail(fields ...string) error{
+func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesOrderDetail) error {
 	o := orm.NewOrm()
-	if _, err := o.Update(t, fields...); err != nil {
-		return err
+	tx, err := o.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %v", err)
+	}
+
+	if _, err := tx.Update(&m); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to update order: %v", err)
+	}
+
+	// Update existing SalesOrderDetail (Details)
+	for _, detail := range data_post {
+		if detail.Id != 0 {
+			if _, err := tx.Update(&detail); err != nil {
+				tx.Rollback()
+				return fmt.Errorf("failed to update detail: %v", err)
+			}
+		}
+	}
+
+	// Insert new SalesOrderDetail (Details)
+	for i := range data_post {
+		data_post[i].SalesOrderId = m.Id
+	}
+
+	if len(data_post) > 0 {
+		_, err = o.InsertMulti(len(data_post), data_post)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to insert new details: %v", err)
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %v after commit failed: %v", rbErr, err)
+		}
+		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil
 }
@@ -193,4 +234,164 @@ func (t *SalesOrder) InsertWithDetailBeginCommit(m SalesOrder, d []SalesOrderDet
 	}
 
 	return nil
+}
+
+type (
+	SalesOrderRtn struct {
+		Id                int                  `json:"id"`
+		ReferenceNo       string               `json:"reference_no"`
+		IssueDate         string               `json:"issue_date"`
+		DueDate           string               `json:"due_date"`
+		LeadTime          int                  `json:"lead_time"`
+		PoolId            PoolRtnJson          `json:"pool_id"`
+		OutletId          SimplePlantRtnJson   `json:"outlet_id"`
+		CustomerId        SimpleCompanyRtnJson `json:"customer_id"`
+		PlantId           SimplePlantRtnJson   `json:"plant_id"`
+		Terms             int                  `json:"terms"`
+		DeliveryAddress   string               `json:"delivery_address"`
+		EmployeeId        int                  `json:"employee_id"`
+		Subtotal          float64              `json:"subtotal"`
+		TotalDisc         float64              `json:"total_disc"`
+		Dpp               float64              `json:"dpp"`
+		Ppn               int                  `json:"ppn" `
+		PpnAmount         float64              `json:"ppn_amount"`
+		Total             float64              `json:"total"`
+		StatusId          int8                 `json:"status_id"`
+		StatusDescription string               `json:"status_description"`
+		Detail            []orm.Params         `json:"detail"`
+	}
+
+	SalesOrderRtnJson struct {
+		Id                int     `json:"id"`
+		ReferenceNo       string  `json:"reference_no"`
+		IssueDate         string  `json:"issue_date"`
+		DueDate           string  `json:"due_date"`
+		LeadTime          int     `json:"lead_time"`
+		PoolId            int     `json:"pool_id"`
+		PoolName          string  `json:"pool_name"`
+		OutletId          int     `json:"outlet_id"`
+		OutletName        string  `json:"outlet_name"`
+		CustomerId        int     `json:"customer_id"`
+		CustomerCode      int     `json:"customer_code"`
+		CustomerName      int     `json:"customer_name"`
+		PlantId           int     `json:"plant_id"`
+		PlantName         string  `json:"plant_name"`
+		FullName          string  `json:"full_name"`
+		Terms             int     `json:"terms"`
+		DeliveryAddress   string  `json:"delivery_address"`
+		EmployeeId        int     `json:"employee_id"`
+		EmployeeName      string  `json:"employee_name"`
+		Subtotal          float64 `json:"subtotal"`
+		TotalDisc         float64 `json:"total_disc"`
+		Dpp               float64 `json:"dpp"`
+		Ppn               int     `json:"ppn" `
+		PpnAmount         float64 `json:"ppn_amount"`
+		Total             float64 `json:"total"`
+		StatusId          int8    `json:"status_id"`
+		StatusDescription string  `json:"status_description"`
+		StatusData        string  `json:"status_data"`
+	}
+
+	SalesOrderDetailRtnJson struct {
+		Id                int     `json:"id"`
+		SalesOrderId      int     `json:"sales_order_id"`
+		ItemNo            int     `json:"item_no"`
+		ProductId         int     `json:"product_id"`
+		ProductCode       string  `json:"product_code"`
+		ProductName       string  `json:"product_name"`
+		Qty               float64 `json:"qty"`
+		UomId             int     `json:"uom_id"`
+		UomCode           string  `json:"uom_code"`
+		Ratio             float64 `json:"ratio"`
+		PackagingId       int     `json:"packaging_id"`
+		PackagingCode     string  `json:"packaging_code"`
+		FinalQty          float64 `json:"final_qty"`
+		FinalUomId        int     `json:"final_uom_id"`
+		FinalUomCode      string  `json:"final_uom_code"`
+		ConversionQty     float64 `json:"conversion_qty"`
+		ConversionUomId   int     `json:"convertsion_uom_id"`
+		ConversionUomCode string  `json:"convertsion_uom_code"`
+		NormalPrice       float64 `json:"normal_price"`
+		PriceId           int     `json:"price_id"`
+		Price             float64 `json:"price"`
+		StatusData        string  `json:"status_data"`
+	}
+)
+
+func (t *SalesOrder) GetById(id, user_id int) (m *SalesOrderRtn, err error) {
+	o := orm.NewOrm()
+	cond := orm.NewCondition()
+	cond1 := cond.And("deleted_at__isnull", true).And("id", id)
+	qs := SalesOrders().SetCond(cond1)
+	err = qs.One(t)
+
+	var customer SimpleCompanyRtnJson
+	o.Raw("select id,code,name  from companies where id  =" + utils.Int2String(t.CustomerId) + " ").QueryRow(&customer)
+
+	var pool PoolRtnJson
+	o.Raw("select id,name,status  from pools where id  = " + utils.Int2String(t.PoolId) + " ").QueryRow(&pool)
+
+	var outlet SimplePlantRtnJson
+	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where id = " + utils.Int2String(t.OutletId) + "").QueryRow(&outlet)
+
+	var plant SimplePlantRtnJson
+	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where id = " + utils.Int2String(t.PlantId) + "").QueryRow(&plant)
+
+	dlist := t.GetDetail(id, user_id)
+
+	m = &SalesOrderRtn{
+		Id:                t.Id,
+		ReferenceNo:       t.ReferenceNo,
+		IssueDate:         t.IssueDate.Format("2006-01-02"),
+		DueDate:           t.DueDate.Format("2006-01-02"),
+		LeadTime:          t.LeadTime,
+		PoolId:            pool,
+		OutletId:          outlet,
+		CustomerId:        customer,
+		PlantId:           plant,
+		Terms:             t.Terms,
+		DeliveryAddress:   t.DeliveryAddress,
+		EmployeeId:        t.EmployeeId,
+		Subtotal:          t.Subtotal,
+		TotalDisc:         t.TotalDisc,
+		Dpp:               t.Dpp,
+		Ppn:               t.Ppn,
+		PpnAmount:         t.PpnAmount,
+		Total:             t.Total,
+		StatusId:          t.StatusId,
+		StatusDescription: t.StatusDescription,
+		Detail:            dlist,
+	}
+
+	return m, err
+}
+
+func (t *SalesOrder) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id int, id int, plant_id int, employee_ids, outlet_ids, customer_ids, status_ids string, issue_date, due_date, updated_at *string) (u utils.PageDynamic, err error) {
+	// o := orm.NewOrm()
+	// var m []orm.Params
+	// var c int
+
+	// // theDate date,updatedAt date,uId int,priceTypeId varchar(50),divisionIds varchar(7),typeIds varchar(7),statusIds varchar(5),reportTypeId int,userId int,keyword varchar(255),in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int
+	// o.Raw("call sp_SalesOrderCount(?,?,"+utils.Int2String(id)+",'"+price_type+"','"+division_ids+"','"+type_ids+"','"+status_ids+"',1,"+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &updated_at).QueryRow(&c)
+
+	// if allsize == 1 && c > 0 {
+	// 	size = c
+	// }
+	// _, err = o.Raw("call sp_SalesOrder(?,?,"+utils.Int2String(id)+",'"+price_type+"','"+division_ids+"','"+type_ids+"','"+status_ids+"',1,"+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &issue_date, &updated_at).Values(&m)
+
+	// if c == 0 && err == nil {
+	// 	err = orm.ErrNoRows
+	// 	return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
+	// } else if err != nil {
+	// 	return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
+	// }
+
+	// return utils.PaginationDynamic(int(c), p, size, fmt.Sprintf("%v", m[0]["field_key"]), fmt.Sprintf("%v", m[0]["field_label"]), fmt.Sprintf("%v", m[0]["field_int"]), fmt.Sprintf("%v", m[0]["field_level"]), fmt.Sprintf("%v", m[0]["field_export"]), fmt.Sprintf("%v", m[0]["field_export_label"]), fmt.Sprintf("%v", m[0]["field_footer"]), m), err
+	return utils.PaginationDynamic(0, p, size, "", "", "", "", "", "", "", nil), err
+}
+
+func (c *SalesOrder) GetDetail(id, user_id int) (m []orm.Params) {
+	o := orm.NewOrm()
+	o.Raw("call sp_SalesOrder(null,null," + utils.Int2String(id) + ",null,null,null,null,0," + utils.Int2String(user_id) + ",'',null,null,null,null,null)").Values(&m)
+	return m
 }
