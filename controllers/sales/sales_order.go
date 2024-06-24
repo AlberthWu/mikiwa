@@ -7,6 +7,7 @@ import (
 	"mikiwa/models"
 	"mikiwa/utils"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -36,7 +37,6 @@ type (
 	InputDetailSalesOrder struct {
 		Id        int     `json:"id"`
 		ProductId int     `json:"product_id"`
-		PriceId   int     `json:"price_id"`
 		Qty       float64 `json:"qty"`
 		UomId     int     `json:"uom_id"`
 		LeadTime  int     `json:"lead_time"`
@@ -51,7 +51,7 @@ func (c *SalesOrderController) Post() {
 	var user_id, form_id int
 	var user_name string
 	var err error
-	var folderName string = "sales_order"
+	// var folderName string = "sales_order"
 	var status_id int8 = base.OpenSo
 	sess := c.GetSession("profile")
 	if sess != nil {
@@ -126,7 +126,8 @@ func (c *SalesOrderController) Post() {
 	var products models.Product
 	var productUom models.ProductUom
 	var priceRtn *models.ProductConversionRtnJson
-	var disc1, disc2, discTpr, subtotal, nettprice, totalDisc, total float64
+	var subtotal, disc1, disc2, disctpr, totalDisc, dpp, price, normal_price, nettprice, subtotal_, totalDisc_ float64
+	var ppn int
 	for _, v := range ob.Detail {
 		err = models.Products().Filter("id", v.ProductId).Filter("deleted_at__isnull", true).Filter("product_type_id", 3).One(&products)
 		if err == orm.ErrNoRows {
@@ -158,7 +159,7 @@ func (c *SalesOrderController) Post() {
 			return
 		}
 
-		err = models.ProductUoms().Filter("product_id", v.ProductId).Filter("uom_id", v.UomId).One(&productUom)
+		err = o.Raw("select * from product_uom where product_id = " + utils.Int2String(v.ProductId) + " and uom_id = " + utils.Int2String(v.UomId)).QueryRow(&productUom)
 		if err == orm.ErrNoRows {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, "Product uom unregistered/Illegal data")
@@ -173,16 +174,45 @@ func (c *SalesOrderController) Post() {
 			return
 		}
 
-		priceRtn = products.GetConversion(ob.IssueDate, v.Qty, v.ProductId, ob.CustomerId, v.UomId, user_id)
-		disc1 = (priceRtn.Price * v.Disc1 / 100) * -1
-		disc2 = ((priceRtn.Price + disc1) * v.Disc2 / 100) * -1
-		discTpr = priceRtn.Price + disc1 + disc2 - v.DiscTpr
-		nettprice = priceRtn.Price + discTpr
-		subtotal = v.Qty * nettprice
-		totalDisc += totalDisc + disc1 + disc2 + (v.DiscTpr * -1)
-		total += total + subtotal
+		priceRtn = products.GetConversion(ob.IssueDate, v.Qty, ob.CustomerId, v.ProductId, v.UomId, user_id)
+		if priceRtn == nil {
+			subtotal = 0
+			disc1 = 0
+			disc2 = 0
+			disctpr = 0
+			nettprice = 0
+			totalDisc = 0
+		} else {
+			if priceRtn.Price == 0 {
+				subtotal = 0
+				disc1 = 0
+				disc2 = 0
+				disctpr = 0
+				nettprice = 0
+				totalDisc = 0
+			} else {
+				subtotal = priceRtn.FinalQty * priceRtn.Price
+				disc1 = (priceRtn.Price * v.Disc1 / 100) * -1
+				disc2 = ((priceRtn.Price + disc1) * v.Disc2 / 100) * -1
+				disctpr = v.DiscTpr * -1
+				nettprice = priceRtn.Price + disc1 + disc2 + disctpr
+				totalDisc = (disc1 + disc2 + disctpr) * priceRtn.FinalQty
+
+			}
+
+		}
+
+		subtotal_ += subtotal
+		totalDisc_ += totalDisc
+		dpp = subtotal_ + totalDisc_
+		fmt.Println(v.ProductId, subtotal, totalDisc, subtotal_, totalDisc_)
 	}
 
+	if customers.IsTax == 1 {
+		ppn = 11
+	}
+
+	dpp_amount, _, _, _, _, ppn_amount, total := utils.GetDppPpnTotal(ob.IssueDate, ppn, 0, 0, 0, 0, dpp)
 	thedate, errDate := time.Parse("2006-01-02", ob.IssueDate)
 	if errDate != nil {
 		c.Ctx.ResponseWriter.WriteHeader(401)
@@ -195,14 +225,6 @@ func (c *SalesOrderController) Post() {
 
 	seqno, referenceno := models.GenerateNumber(thedate, 1, ob.CustomerId)
 
-	tx, errTrans := o.Begin()
-	if errTrans != nil {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, errTrans.Error())
-		c.ServeJSON()
-		return
-	}
-
 	t_sales_order = models.SalesOrder{
 		IssueDate:       thedate,
 		ReferenceNo:     referenceno,
@@ -210,39 +232,114 @@ func (c *SalesOrderController) Post() {
 		DueDate:         dueDate,
 		PoolId:          1,
 		CustomerId:      ob.CustomerId,
-		CustomerName:    customers.Name,
+		CustomerCode:    customers.Code,
 		Terms:           customers.Terms,
 		DeliveryAddress: ob.DeliveryAddress,
 		EmployeeId:      ob.EmployeeId,
 		EmployeeName:    "",
 		LeadTime:        ob.LeadTime,
+		Subtotal:        subtotal_,
+		TotalDisc:       totalDisc_,
+		Dpp:             dpp_amount,
+		Ppn:             ppn,
+		PpnAmount:       ppn_amount,
+		Total:           total,
 		StatusId:        ob.StatusId,
-		Subtotal:        total,
-		TotalDisc:       totalDisc,
 		CreatedBy:       user_name,
 		UpdatedBy:       user_name,
 	}
-	_, err_ := t_sales_order.Insert(t_sales_order)
-	errcode, errmessage = base.DecodeErr(err_)
 
+	wg = new(sync.WaitGroup)
+	var mutex sync.Mutex
+	for k, v := range ob.Detail {
+		i = 0
+		wg.Add(1)
+		go func(k int, v InputDetailSalesOrder) {
+			priceRtn = products.GetConversion(ob.IssueDate, v.Qty, ob.CustomerId, v.ProductId, v.UomId, user_id)
+			if priceRtn == nil {
+				disc1 = 0
+				disc2 = 0
+				disctpr = 0
+				nettprice = 0
+				subtotal = 0
+				price = 0
+				normal_price = 0
+			} else {
+				if priceRtn.Price == 0 {
+					disc1 = 0
+					disc2 = 0
+					disctpr = 0
+					nettprice = 0
+					subtotal = 0
+					price = 0
+					normal_price = 0
+				} else {
+					disc1 = (priceRtn.Price * v.Disc1 / 100) * -1
+					disc2 = ((priceRtn.Price + disc1) * v.Disc2 / 100) * -1
+					disctpr = v.DiscTpr * -1
+					price = priceRtn.Price
+					normal_price = priceRtn.NormalPrice
+					nettprice = price + disc1 + disc2 + disctpr
+					subtotal = priceRtn.FinalQty * nettprice
+				}
+
+			}
+			defer wg.Done()
+			mutex.Lock()
+			if v.Id == 0 {
+				inputDetail = append(inputDetail, models.SalesOrderDetail{
+					SalesOrderId:      t_sales_order.Id,
+					ReferenceNo:       referenceno,
+					IssueDate:         thedate,
+					DueDate:           dueDate,
+					ItemNo:            k + 1,
+					ProductId:         v.ProductId,
+					ProductCode:       priceRtn.ProductCode,
+					Qty:               v.Qty,
+					UomId:             v.UomId,
+					UomCode:           priceRtn.UomCode,
+					Ratio:             priceRtn.Ratio,
+					PackagingId:       priceRtn.PackagingId,
+					PackagingCode:     priceRtn.PackagingCode,
+					FinalQty:          priceRtn.FinalQty,
+					FinalUomId:        priceRtn.FinalUomId,
+					FinalUomCode:      priceRtn.FinalUomCode,
+					NormalPrice:       normal_price,
+					PriceId:           priceRtn.PriceId,
+					Price:             price,
+					Disc1:             v.Disc1,
+					Disc1Amount:       disc1,
+					Disc2:             v.Disc2,
+					Disc2Amount:       disc2,
+					DiscTpr:           disctpr,
+					TotalDisc:         disc1 + disc2 + disctpr,
+					NettPrice:         nettprice,
+					Total:             subtotal,
+					LeadTime:          v.LeadTime,
+					ConversionQty:     priceRtn.ConversionQty,
+					ConversionUomId:   priceRtn.ConversionUomId,
+					ConversionUomCode: priceRtn.ConversionUomCode,
+					CreatedBy:         user_name,
+					UpdatedBy:         user_name,
+				})
+				i += 1
+			}
+			mutex.Unlock()
+		}(k, v)
+	}
+	wg.Wait()
+
+	err_ := t_sales_order.InsertWithDetail(t_sales_order, inputDetail)
+	errcode, errmessage = base.DecodeErr(err_)
 	if err_ != nil {
-		tx.Rollback()
 		c.Ctx.ResponseWriter.WriteHeader(errcode)
 		utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
 		c.ServeJSON()
 		return
 	} else {
-
+		c.Data["json"] = "Success"
 	}
 
-	errTrans = tx.Commit()
-	errcode, errmessage = base.DecodeErr(errTrans)
-	if errTrans != nil {
-		tx.Rollback()
-		c.Ctx.ResponseWriter.WriteHeader(errcode)
-		utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
-	} else {
-	}
 	c.ServeJSON()
 }
 
@@ -250,3 +347,105 @@ func (c *SalesOrderController) Put()    {}
 func (c *SalesOrderController) Delete() {}
 func (c *SalesOrderController) GetOne() {}
 func (c *SalesOrderController) GetAll() {}
+
+// t_sales_order = models.SalesOrder{
+// 	IssueDate:       thedate,
+// 	ReferenceNo:     referenceno,
+// 	SeqNo:           seqno,
+// 	DueDate:         dueDate,
+// 	PoolId:          1,
+// 	CustomerId:      ob.CustomerId,
+// 	CustomerCode:    customers.Code,
+// 	Terms:           customers.Terms,
+// 	DeliveryAddress: ob.DeliveryAddress,
+// 	EmployeeId:      ob.EmployeeId,
+// 	EmployeeName:    "",
+// 	LeadTime:        ob.LeadTime,
+// 	Subtotal:        total,
+// 	TotalDisc:       totalDisc,
+// 	Dpp:             0,
+// 	Ppn:             0,
+// 	PpnAmount:       0,
+// 	Total:           0,
+// 	StatusId:        ob.StatusId,
+// 	CreatedBy:       user_name,
+// 	UpdatedBy:       user_name,
+// }
+// _, err_ := o.Insert(&t_sales_order)
+// errcode, errmessage = base.DecodeErr(err_)
+
+// if err_ != nil {
+// 	tx.Rollback()
+// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
+// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+// 	c.ServeJSON()
+// 	return
+// } else {
+// 	wg = new(sync.WaitGroup)
+// 	var mutex sync.Mutex
+// 	for k, v := range ob.Detail {
+// 		i = 0
+// 		wg.Add(1)
+// 		go func(k int, v InputDetailSalesOrder) {
+// 			priceRtn = products.GetConversion(ob.IssueDate, v.Qty, ob.CustomerId, v.ProductId, v.UomId, user_id)
+// 			defer wg.Done()
+// 			mutex.Lock()
+// 			if v.Id == 0 {
+// 				inputDetail = append(inputDetail, models.SalesOrderDetail{
+// 					SalesOrderId:      t_sales_order.Id,
+// 					ReferenceNo:       referenceno,
+// 					IssueDate:         thedate,
+// 					DueDate:           dueDate,
+// 					ItemNo:            k + 1,
+// 					ProductId:         v.ProductId,
+// 					ProductCode:       priceRtn.ProductCode,
+// 					Qty:               v.Qty,
+// 					UomId:             v.UomId,
+// 					UomCode:           priceRtn.UomCode,
+// 					Ratio:             priceRtn.Ratio,
+// 					PackagingId:       priceRtn.PackagingId,
+// 					PackagingCode:     priceRtn.PackagingCode,
+// 					FinalQty:          priceRtn.FinalQty,
+// 					FinalUomId:        priceRtn.FinalUomId,
+// 					FinalUomCode:      priceRtn.FinalUomCode,
+// 					NormalPrice:       priceRtn.NormalPrice,
+// 					PriceId:           priceRtn.PriceId,
+// 					Price:             priceRtn.Price,
+// 					Disc1:             v.Disc1,
+// 					Disc2:             v.Disc2,
+// 					DiscTpr:           v.DiscTpr,
+// 					TotalDisc:         0,
+// 					NettPrice:         0,
+// 					Total:             0,
+// 					LeadTime:          v.LeadTime,
+// 					ConversionQty:     priceRtn.ConversionQty,
+// 					ConversionUomId:   priceRtn.ConversionUomId,
+// 					ConversionUomCode: priceRtn.ConversionUomCode,
+// 					CreatedBy:         user_name,
+// 					UpdatedBy:         user_name,
+// 				})
+// 				i += 1
+// 			}
+// 			mutex.Unlock()
+// 		}(k, v)
+// 	}
+// 	wg.Wait()
+// 	_, err = o.InsertMulti(i, inputDetail)
+// 	errcode, errmessage = base.DecodeErr(err)
+// 	if err != nil {
+// 		tx.Rollback()
+// 		c.Ctx.ResponseWriter.WriteHeader(errcode)
+// 		utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+// 		c.ServeJSON()
+// 		return
+// 	}
+// }
+
+// errTrans = tx.Commit()
+// errcode, errmessage = base.DecodeErr(errTrans)
+// if errTrans != nil {
+// 	tx.Rollback()
+// 	c.Ctx.ResponseWriter.WriteHeader(errcode)
+// 	utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
+// }
+// c.ServeJSON()

@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"fmt"
 	"mikiwa/models"
 	"mikiwa/utils"
+	"strings"
 
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/core/logs"
@@ -147,5 +149,24 @@ func FormName(form_name string) int {
 
 func (c *BaseController) GetSvrDate() {
 	c.Data["json"] = utils.GetSvrDate()
+	c.ServeJSON()
+}
+
+func (c *BaseController) GetDppPpnTotal() {
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	pph_22, _ := c.GetInt("pph_22")
+	pph_23, _ := c.GetInt("pph_23")
+	pbb_kb_1, _ := c.GetInt("pbb_kb_1")
+	pbb_kb_2, _ := c.GetInt("pbb_kb_2")
+	vat, _ := c.GetInt("vat")
+	dpp, _ := c.GetFloat("dpp")
+	fmt.Printf("Check : %f\n", dpp)
+	dpp_amount, pph_22_amount, pph_23_amount, pbbkb1_amount, pbbkb2_amount, ppn, total := utils.GetDppPpnTotal(issue_date, vat, pph_22, pph_23, pbb_kb_1, pbb_kb_2, dpp)
+	// dpp_ := fmt.Sprintf("%.2f", math.Trunc(dpp_amount))
+	// ppn_ := math.Trunc(ppn)
+	// total_ := math.Trunc(total)
+	// utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", map[string]interface{}{"dpp": dpp_amount, "ppn": ppn, "total": total})
+	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", map[string]interface{}{"dpp": fmt.Sprintf("%.2f", dpp_amount), "pph_22": fmt.Sprintf("%.2f", pph_22_amount), "pph_23": fmt.Sprintf("%.2f", pph_23_amount), "pbb_kb_1": fmt.Sprintf("%.2f", pbbkb1_amount), "pbb_kb_2": fmt.Sprintf("%.2f", pbbkb2_amount), "ppn": fmt.Sprintf("%.2f", ppn), "total": fmt.Sprintf("%.2f", total)})
+	c.Ctx.ResponseWriter.WriteHeader(200)
 	c.ServeJSON()
 }

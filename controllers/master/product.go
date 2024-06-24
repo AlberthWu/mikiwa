@@ -911,7 +911,7 @@ func (c *ProductController) GetConversion() {
 	if issue_date == "" {
 		issue_date = utils.GetSvrDate().Format("2006-01-02")
 	}
-	d := t_product.GetConversion(issue_date, qty, id, customer_id, uom_id, user_id)
+	d := t_product.GetConversion(issue_date, qty, customer_id, id, uom_id, user_id)
 	utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	c.ServeJSON()
 }

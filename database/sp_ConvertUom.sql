@@ -8,10 +8,12 @@ BEGIN
     declare NettPrice decimal(18,2);
     set priceId = (select id from (select id,DENSE_RANK() OVER (PARTITION BY company_id,product_id,price_type order by effective_date desc,ifnull(expired_date,'9999-12-31'), id desc) dr from prices 
 					where deleted_at is null and price_type = 'sales' and issueDate between effective_date and ifnull(expired_date,'9999-12-31') and company_id = companyId and product_id=uId ) x where dr = 1 );
-	
+	if qtyId = 0 then
+		set qtyId = 1;
+    end if;
 	if ifnull(priceId,0) = 0 then
-		select ifnull(priceId,0) price_id,product_id,product_code,product_name,price,qty,item_no,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,conversion_qty,conversion_uom_id,conversion_uom_code from (
-		select uId product_id,product_code,product_name,case when conversion_uom_id = uomId then ceiling(round(normal_price/t3.final_ratio,0)/500)*500 else normal_price end price,qtyId qty,item_no,t0.uom_id,
+		select ifnull(priceId,0) price_id,product_id,product_code,product_name,normal_price,price,qty,item_no,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,conversion_qty,conversion_uom_id,conversion_uom_code from (
+		select uId product_id,product_code,product_name,normal_price,case when conversion_uom_id = uomId then ceiling(round(normal_price/t3.final_ratio,0)/500)*500 else normal_price end price,qtyId qty,item_no,t0.uom_id,
 			case when final_uom_id = uomId then t3.is_default_ratio else ratio end ratio,
 			case when conversion_uom_id = uomId then uom_id when uomId = final_uom_id then uomId else lag(t0.uom_id) over (partition by product_id order by item_no) end packaging_id,
 			case when conversion_uom_id = uomId then qtyId else qtyId*t0.is_default_ratio end final_qty,
@@ -28,8 +30,8 @@ BEGIN
 		where uom_id = uomId;
 	else
 		set NettPrice = (select cast((t1.normal_price + ((t1.normal_price*disc_one)/100) + (t1.normal_price + (t1.normal_price*disc_one)/100)*disc_two/100) + disc_tpr as decimal(18,2)) price from price_product_uom t0 left join (select id,price normal_price from products where id = uId) t1 on 1=1 where is_default = 1 and price_id = priceId);
-		select ifnull(priceId,0) price_id,product_id,product_code,product_name,price,qty,item_no,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,conversion_qty,conversion_uom_id,conversion_uom_code from (
-		select uId product_id,product_code,product_name,case when conversion_uom_id = uomId then ceiling(round(NettPrice/t3.final_ratio,0)/500)*500 else NettPrice end price,qtyId qty,item_no,t0.uom_id,
+		select ifnull(priceId,0) price_id,product_id,product_code,product_name,normal_price,price,qty,item_no,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,conversion_qty,conversion_uom_id,conversion_uom_code from (
+		select uId product_id,product_code,product_name,normal_price,case when conversion_uom_id = uomId then ceiling(round(NettPrice/t3.final_ratio,0)/500)*500 else NettPrice end price,qtyId qty,item_no,t0.uom_id,
 			case when final_uom_id = uomId then t3.is_default_ratio else ratio end ratio,
 			case when conversion_uom_id = uomId then uom_id when uomId = final_uom_id then uomId else lag(t0.uom_id) over (partition by product_id order by item_no) end packaging_id,
 			case when conversion_uom_id = uomId then qtyId else qtyId*t0.is_default_ratio end final_qty,
