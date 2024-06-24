@@ -43,6 +43,8 @@ type (
 		ProductDivisionCode string    `json:"product_division_code" orm:"column(product_division_code)"`
 		ProductDivisionName string    `json:"product_division_name" orm:"column(product_division_name)"`
 		SerialNumber        string    `json:"serial_number" orm:"column(serial_number)"`
+		ArtNo               string    `json:"art_no" orm:"column(art_no)"`
+		Barcode             string    `json:"barcode" orm:"column(barcode)"`
 		UomId               int       `json:"uom_id" orm:"column(uom_id)"`
 		UomCode             string    `json:"uom_code" orm:"column(uom_code)"`
 		LeadTime            int       `json:"lead_time" orm:"column(lead_time)"`
@@ -221,6 +223,8 @@ type (
 		ProductTypeId     ProductTypeRtn      `json:"product_type_id"`
 		ProductDivisionId ProductDivisionRtn  `json:"product_division_id"`
 		SerialNumber      string              `json:"serial_number"`
+		ArtNo             string              `json:"art_no"`
+		Barcode           string              `json:"barcode"`
 		LeadTime          int                 `json:"lead_time"`
 		UomId             int                 `json:"uom_id"`
 		UomCode           string              `json:"uom_code"`
@@ -248,6 +252,8 @@ type (
 		ProductCode  string `json:"product_code"`
 		ProductName  string `json:"product_name"`
 		SerialNumber string `json:"serial_number"`
+		ArtNo        string `json:"art_no"`
+		Barcode      string `json:"barcode"`
 		LeadTime     int    `json:"lead_time"`
 		UomId        int    `json:"uom_id"`
 		UomCode      string `json:"uom_code"`
@@ -476,6 +482,8 @@ func (t *Product) GetById(id, user_id int) (m *ProductRtn, err error) {
 		ProductTypeId:     producttype,
 		ProductDivisionId: productdivision,
 		SerialNumber:      d.SerialNumber,
+		ArtNo:             d.ArtNo,
+		Barcode:           d.Barcode,
 		LeadTime:          d.LeadTime,
 		UomId:             d.UomId,
 		UomCode:           d.UomCode,

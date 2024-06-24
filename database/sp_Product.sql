@@ -57,19 +57,19 @@ BEGIN
     set salesIdSet = case when (salesIds is null or salesIds = '') then '' else concat(" AND t1.is_sales in (",replace(salesIds,'''',''),")") end ;
     set productionIdSet = case when (productionIds is null or productionIds = '') then '' else concat(" AND t1.is_production in (",replace(productionIds,'''',''),")") end ;
     SET keywordSet  = case when (keyword is null or keyword = '') then '' else concat(" and (t0.product_code like '%",keyword,"%'  or t0.product_name like '%",keyword,"%' or t0.product_division_code like '%",keyword,"%' or t0.product_division_name like '%",keyword,"%' 
-		 or t0.product_type_name like '%",keyword,"%'   or t0.uom_code like '%",keyword,"%')")   end;
+		 or t0.product_type_name like '%",keyword,"%'   or t0.uom_code like '%",keyword,"%'  or t0.art_no like '%",keyword,"%'  or t0.barcode like '%",keyword,"%')")   end;
    
     SET limitSet = case when LimitVal is null then '' else concat(" limit ",limitVal)    end;
     set offsetSet = case when OffsetVal is null then '' else concat(" offset ",offsetVal)    end ;
     
     -- product_uom
     if reportType = 0 then
-		SET @s =  (concat ("select product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,price
-								,'product_code,product_name,uom_code,ratio,is_default,price' field_key
-								,'Kode,Nama,Uom,Ratio,Default,Harga' field_label
-								,'product_code,product_name,uom_code,ratio,is_default,price' field_export
-								,'Kode,Nama,Uom,Ratio,Default,Harga' field_export_label
-								,'ratio,price' field_int
+		SET @s =  (concat ("select product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default
+								,'product_code,product_name,uom_code,ratio,is_default' field_key
+								,'Kode,Nama,Uom,Ratio,Default' field_label
+								,'product_code,product_name,uom_code,ratio,is_default' field_export
+								,'Kode,Nama,Uom,Ratio,Default' field_export_label
+								,'ratio' field_int
 								,'' field_footer
 								,'' field_level 
 							from 
@@ -88,16 +88,16 @@ BEGIN
 													where deleted_at is null ",uIdSet,updatedAtSet,keywordSet,divisionIdSet,typeIdSet,statusIdSet,purchaseIdSet,salesIdSet,productionIdSet,")
 								) x order by product_id,item_no;"));
     else
-		SET @s =  (concat ("select id,id product_id,product_code,product_name,serial_number,product_type_id,product_type_name,product_division_id,product_division_code,product_division_name,uom_id,uom_code,lead_time,status_id,status_data,is_purchase,is_sales,is_production
-								,'product_code,product_name,serial_number,lead_time,uom_code,product_type_name,product_division_code,is_purchase,is_sales,is_production,status_id,status_data' field_key
-                                ,'Kode,Nama,Serial,ETA,Uom,Tipe,Divisi,Pembelian,Sales,Produksi,Status,Status Data' field_label
-                                ,'product_code,product_name,serial_number,lead_time,uom_code,product_type_name,product_division_code,is_purchase,is_sales,is_production,status_id,status_data' field_export
-                                ,'Kode,Nama,Serial,ETA,Uom,Tipe,Divisi,Pembelian,Sales,Produksi,Status,Status Data' field_export_label
+		SET @s =  (concat ("select id,id product_id,product_code,product_name,serial_number,art_no,barcode,product_type_id,product_type_name,product_division_id,product_division_code,product_division_name,uom_id,uom_code,lead_time,status_id,status_data,is_purchase,is_sales,is_production
+								,'product_code,product_name,art_no,barcode,lead_time,uom_code,product_type_name,product_division_code,is_purchase,is_sales,is_production,status_id,status_data' field_key
+                                ,'Kode,Nama,Art no,Barcode,ETA,Uom,Tipe,Divisi,Pembelian,Sales,Produksi,Status,Status Data' field_label
+                                ,'product_code,product_name,art_no,barcode,lead_time,uom_code,product_type_name,product_division_code,is_purchase,is_sales,is_production,status_id,status_data' field_export
+                                ,'Kode,Nama,Art no,Barcode,ETA,Uom,Tipe,Divisi,Pembelian,Sales,Produksi,Status,Status Data' field_export_label
                                 ,'lead_time' field_int
                                 ,'' field_footer
                                 ,'product_id' field_level
 							from
-								(select t0.id,product_code,product_name,serial_number,product_type_id,product_type_name,product_division_id,product_division_code,product_division_name,uom_id,uom_code,lead_time,status_id,case when date(created_at) = date(ifnull(updated_at,created_at)) then 'NEW' else 'EDIT!!' end status_data
+								(select t0.id,product_code,product_name,serial_number,art_no,barcode,product_type_id,product_type_name,product_division_id,product_division_code,product_division_name,uom_id,uom_code,lead_time,status_id,case when date(created_at) = date(ifnull(updated_at,created_at)) then 'NEW' else 'EDIT!!' end status_data
 									,is_purchase,is_sales,is_production
                                 from 
 									products t0
