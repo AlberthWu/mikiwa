@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"mikiwa/utils"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -16,7 +18,7 @@ type (
 		PoolId          int       `json:"pool_id" orm:"column(pool_id)"`
 		PoolName        string    `json:"pool_name" orm:"column(pool_name)"`
 		CustomerId      int       `json:"customer_id" orm:"column(customer_id)"`
-		CustomerName    string    `json:"customer_name" orm:"column(customer_name)"`
+		CustomerCode    string    `json:"customer_code" orm:"column(customer_code)"`
 		Terms           int       `json:"terms" orm:"column(terms)"`
 		DeliveryAddress string    `json:"delivery_address" orm:"column(delivery_address)"`
 		EmployeeId      int       `json:"employee_id" orm:"column(employee_id)"`
@@ -59,7 +61,9 @@ type (
 		PriceId           int       `json:"price_id" orm:"column(price_id)"`
 		Price             float64   `json:"price" orm:"column(price);digits(18);decimals(2);default(0)"`
 		Disc1             float64   `json:"disc1" orm:"column(disc1);digits(5);decimals(2);default(0)"`
+		Disc1Amount       float64   `json:"disc1_amount" orm:"column(disc1_amount);digits(18);decimals(2);default(0)"`
 		Disc2             float64   `json:"disc2" orm:"column(disc2);digits(5);decimals(2);default(0)"`
+		Disc2Amount       float64   `json:"disc2_amount" orm:"column(disc2_amount);digits(18);decimals(2);default(0)"`
 		DiscTpr           float64   `json:"disc_tpr" orm:"column(disc_tpr);digits(18);decimals(2);default(0)"`
 		TotalDisc         float64   `json:"total_disc" orm:"column(total_disc);digits(18);decimals(2);default(0)"`
 		NettPrice         float64   `json:"nett_price" orm:"column(nett_price);digits(18);decimals(2);default(0)"`
@@ -99,7 +103,6 @@ func init() {
 
 func (t *SalesOrder) Insert(m SalesOrder) (*SalesOrder, error) {
 	o := orm.NewOrm()
-
 	if _, err := o.Insert(&m); err != nil {
 		return nil, err
 	}
@@ -128,5 +131,66 @@ func (t *SalesOrderDetail) Update(fields ...string) error {
 	if _, err := o.Update(t, fields...); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (t *SalesOrder) InsertWithDetail(m SalesOrder, d []SalesOrderDetail) (err error) {
+	o := orm.NewOrm()
+
+	if _, err = o.Insert(&m); err != nil {
+		return err
+	}
+
+	for i := range d {
+		d[i].SalesOrderId = m.Id
+	}
+
+	_, err = o.InsertMulti(len(d), d)
+	if err != nil {
+		o.Raw("update sales_order set deleted_at = now(),deleted_by = 'Failed' where id = " + utils.Int2String(m.Id)).Exec()
+		return err
+	}
+
+	return nil
+}
+
+func (t *SalesOrder) UpdateWithDetail(fields ...string) error{
+	o := orm.NewOrm()
+	if _, err := o.Update(t, fields...); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *SalesOrder) InsertWithDetailBeginCommit(m SalesOrder, d []SalesOrderDetail) error {
+	o := orm.NewOrm()
+	tx, err := o.Begin()
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Insert(&m); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	for i := range d {
+		d[i].SalesOrderId = m.Id
+	}
+
+	_, err = tx.InsertMulti(len(d), d)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %v after insert details failed: %v", rbErr, err)
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
 	return nil
 }

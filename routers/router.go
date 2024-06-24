@@ -12,6 +12,7 @@ import (
 	accounting "mikiwa/controllers/accounting"
 	finance "mikiwa/controllers/finance"
 	master "mikiwa/controllers/master"
+	sales "mikiwa/controllers/sales"
 	sys_manager "mikiwa/controllers/sys_manager"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -20,6 +21,7 @@ import (
 func init() {
 	// utility
 	beego.Router("/v1/getsvrdate", &controllers.BaseController{}, "get:GetSvrDate")
+	beego.Router("/v1/calcppn", &controllers.BaseController{}, "get:GetDppPpnTotal")
 
 	// business_unit
 	beego.Router("/v1/business_unit/list", &master.BuController{}, "get:GetAllList")
@@ -156,4 +158,7 @@ func init() {
 	beego.Router("/v1/price/sales/:id", &master.PriceController{}, "put:Put;get:GetOne;delete:Delete")
 	beego.Router("/v1/price/sales/calc", &master.PriceController{}, "get:CalcPrice")
 
+	// sales
+	// sales_order
+	beego.Router("/v1/sales/order", &sales.SalesOrderController{}, "post:Post")
 }

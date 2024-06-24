@@ -57,3 +57,10 @@ func ToUpper(s string) string {
 	}
 	return string(a)
 }
+
+func GetDppPpnTotal(issue_date string, vat, pph_22, pph_23, pbb_kb_1, pbb_kb_2 int, dpp_amount float64) (float64, float64, float64, float64, float64, float64, float64) {
+	o := orm.NewOrm()
+	var dpp, pph22, pph23, pbbkb1, pbbkb2, ppn, total float64 = 0, 0, 0, 0, 0, 0, 0
+	o.Raw("call sp_calcdppppntotal('"+issue_date+"',"+Int2String(vat)+","+Int2String(pph_22)+","+Int2String(pph_23)+","+Int2String(pbb_kb_1)+","+Int2String(pbb_kb_2)+","+Float2String(dpp_amount)+"); ").QueryRow(&dpp, &pph22, &pph23, &pbbkb1, &pbbkb2, &ppn, &total)
+	return dpp, pph22, pph23, pbbkb1, pbbkb2, ppn, total
+}

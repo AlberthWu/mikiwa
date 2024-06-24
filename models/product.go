@@ -258,6 +258,7 @@ type (
 		ProductId         int     `json:"product_id"`
 		ProductCode       string  `json:"product_code"`
 		ProductName       string  `json:"product_name"`
+		NormalPrice       float64 `json:"normal_price"`
 		Price             float64 `json:"price"`
 		Qty               float64 `json:"qty"`
 		ItemNo            int     `json:"item_no"`
