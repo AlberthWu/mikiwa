@@ -29,6 +29,8 @@ type (
 		ProductTypeId    int                 `json:"product_type_id"`
 		ProductDivisonId int                 `json:"product_division_id"`
 		SerialNumber     string              `json:"serial_number"`
+		ArtNo            string              `json:"art_no"`
+		Barcode          string              `json:"barcode"`
 		LeadTime         int                 `json:"lead_time"`
 		StatusId         int8                `json:"status_id"`
 		UploadFile       models.DocumentList `json:"upload_file"`
@@ -198,6 +200,8 @@ func (c *ProductController) Post() {
 		ProductDivisionCode: division.DivisionCode,
 		ProductDivisionName: division.DivisionName,
 		SerialNumber:        ob.SerialNumber,
+		Barcode:             ob.Barcode,
+		ArtNo:               ob.ArtNo,
 		UomId:               uom_id,
 		UomCode:             uom_code,
 		LeadTime:            ob.LeadTime,
@@ -431,6 +435,8 @@ func (c *ProductController) Put() {
 	t_product.ProductDivisionCode = division.DivisionCode
 	t_product.ProductDivisionName = division.DivisionName
 	t_product.SerialNumber = ob.SerialNumber
+	t_product.ArtNo = ob.ArtNo
+	t_product.Barcode = ob.Barcode
 	t_product.UomId = uom_id
 	t_product.UomCode = uom_code
 	t_product.LeadTime = ob.LeadTime
