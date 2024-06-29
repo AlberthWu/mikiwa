@@ -303,3 +303,22 @@ func (c *PlantController) GetAllList() {
 	}
 	c.ServeJSON()
 }
+
+func (c *PlantController) GetAllListOutlet() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	company_id := 1
+	d, err := t_plant.GetAllList(company_id, keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
