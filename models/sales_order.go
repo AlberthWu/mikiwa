@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"mikiwa/utils"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -159,7 +160,7 @@ func (t *SalesOrder) InsertWithDetail(m SalesOrder, d []SalesOrderDetail) (data 
 	return &m, nil
 }
 
-func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesOrderDetail) error {
+func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesOrderDetail, user_name string) error {
 	o := orm.NewOrm()
 	tx, err := o.Begin()
 	if err != nil {
@@ -171,14 +172,25 @@ func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesO
 		return fmt.Errorf("failed to update order: %v", err)
 	}
 
-	// Update existing SalesOrderDetail (Details)
-	for _, detail := range data_post {
+	// Update existing SalesOrderDetail (Details) and delete
+	var deleteIds []string
+	var joinId string
+	for _, detail := range data_put {
 		if detail.Id != 0 {
 			if _, err := tx.Update(&detail); err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to update detail: %v", err)
 			}
 		}
+
+		deleteIds = append(deleteIds, utils.Int2String(detail.Id))
+	}
+
+	joinId = strings.Join(deleteIds, ",")
+	_, err = o.Raw("update sales_order_detail set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and sales_order_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to delete existing details: %v", err)
 	}
 
 	// Insert new SalesOrderDetail (Details)
@@ -193,6 +205,7 @@ func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesO
 			return fmt.Errorf("failed to insert new details: %v", err)
 		}
 	}
+
 	err = tx.Commit()
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
@@ -332,10 +345,10 @@ func (t *SalesOrder) GetById(id, user_id int) (m *SalesOrderRtn, err error) {
 	o.Raw("select id,name,status  from pools where id  = " + utils.Int2String(t.PoolId) + " ").QueryRow(&pool)
 
 	var outlet SimplePlantRtnJson
-	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where id = " + utils.Int2String(t.OutletId) + "").QueryRow(&outlet)
+	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(t.OutletId) + "").QueryRow(&outlet)
 
 	var plant SimplePlantRtnJson
-	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where id = " + utils.Int2String(t.PlantId) + "").QueryRow(&plant)
+	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(t.PlantId) + "").QueryRow(&plant)
 
 	dlist := t.GetDetail(id, user_id)
 

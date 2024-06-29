@@ -75,14 +75,14 @@ BEGIN
                                 ,'qty,final_qty,total' field_footer
                                 ,'' field_level
 							from (
-								select id,sales_order_id,reference_no,item_no,product_id,t1.product_code,t1.product_name,qty,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,normal_price,price_id,price,disc1,disc1_amount,disc2,disc2_amount,disc_tpr,total_disc
+								select t0.id,sales_order_id,reference_no,item_no,product_id,t1.product_code,t1.product_name,qty,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,normal_price,price_id,price,disc1,disc1_amount,disc2,disc2_amount,disc_tpr,total_disc
 									,nett_price,total,convertion_qty,conversion_uom_id,conversion_uom_code,case when date(t0.created_at) = date(t0.updated_at) then 'NEW' else 'EDIT!!' end status_data 
-								from sales_order_detail
+								from sales_order_detail t0
 									left join (select id,product_code,product_name from products) t1 on t1.id = t0.product_id
 								where 
 									deleted_at is null
 								and sales_order_id in 
-									(select id from sales_order 
+									(select t0.id from sales_order t0
 										left join (select id,`name` pool_name from pools) t1 on t1.id = t0.pool_id
 										left join (select id,`name` outlet_name from plants) t2 on t2.id = t0.outlet_id
 										left join (select id,`code` customer_code,`name` customer_name from companies) t3 on t3.id = t0.customer_id

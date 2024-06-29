@@ -66,7 +66,7 @@ BEGIN
 	if reportTypeId = 0 then
 		set uIdSet = case when (uId is null  or uId = 0) then '' else concat(" and t0.price_id in (",uId,")")   end;
 		SET @s =  (concat ("select id,sales_order_id,reference_no,item_no,product_id,product_code,product_name,qty,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,normal_price,price_id,price,disc1,disc1_amount,disc2,disc2_amount,disc_tpr,total_disc
-								,nett_price,total,convertion_qty,conversion_uom_id,conversion_uom_code,status_data 
+								,nett_price,total,conversion_qty,conversion_uom_id,conversion_uom_code,status_data 
                                 ,'product_code,product_name,qty,uom_code,ratio,packaging_code,final_qty,final_uom_code,price,disc1,disc2,disc_tpr,nett_price,total,status_data' field_key
                                 ,'Kode,Nama,Qty,Sat,@,Sat,Total qty,Sat,Harga,Disc 1(%),Disc 2(%),Disc (Rp),Harga nett,Jumlah,Status Data' field_label
                                 ,'product_code,product_name,qty,uom_code,ratio,packaging_code,final_qty,final_uom_code,price,disc1,disc2,disc_tpr,nett_price,total,status_data' field_export
@@ -75,19 +75,19 @@ BEGIN
                                 ,'qty,final_qty,total' field_footer
                                 ,'' field_level
 							from (
-								select id,sales_order_id,reference_no,item_no,product_id,t1.product_code,t1.product_name,qty,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,normal_price,price_id,price,disc1,disc1_amount,disc2,disc2_amount,disc_tpr,total_disc
-									,nett_price,total,convertion_qty,conversion_uom_id,conversion_uom_code,case when date(t0.created_at) = date(t0.updated_at) then 'NEW' else 'EDIT!!' end status_data 
-								from sales_order_detail
+								select t0.id,sales_order_id,reference_no,item_no,product_id,t1.product_code,t1.product_name,qty,uom_id,uom_code,ratio,packaging_id,packaging_code,final_qty,final_uom_id,final_uom_code,normal_price,price_id,price,disc1,disc1_amount,disc2,disc2_amount,disc_tpr,total_disc
+									,nett_price,total,conversion_qty,conversion_uom_id,conversion_uom_code,case when date(t0.created_at) = date(t0.updated_at) then 'NEW' else 'EDIT!!' end status_data 
+								from sales_order_detail t0
 									left join (select id,product_code,product_name from products) t1 on t1.id = t0.product_id
 								where 
 									deleted_at is null
 								and sales_order_id in 
-									(select id from sales_order 
+									(select t0.id from sales_order t0
 										left join (select id,`name` pool_name from pools) t1 on t1.id = t0.pool_id
 										left join (select id,`name` outlet_name from plants) t2 on t2.id = t0.outlet_id
 										left join (select id,`code` customer_code,`name` customer_name from companies) t3 on t3.id = t0.customer_id
 										left join (select id,`name` plant_name from plants) t4 on t4.id = t0.plant_id
-										left join (select id,`name` employee_name from employees) t5 on t5.id = t0.employee_id
+										left join (select id, employee_name from employees) t5 on t5.id = t0.employee_id
 									where deleted_at is null ",theDateSet,dueDateSet,updatedAtSet,uIdSet,userIdSet,statusIdSet,employeeIdsSet,outletIdsSet,customerIdsSet,plantIdSet,productIdsSet,keywordSet,")) x ;"));
 	else
 		SET @s =  (concat ("select id,id sales_order_id,reference_no,issue_date,due_date,lead_time,pool_id,pool_name,outlet_id,outlet_name,customer_id,customer_code,customer_name,plant_id,plant_name,full_name,terms,delivery_address,employee_id,employee_name
@@ -110,7 +110,7 @@ BEGIN
                                     left join (select id,`name` outlet_name from plants) t2 on t2.id = t0.outlet_id
                                     left join (select id,`code` customer_code,`name` customer_name from companies) t3 on t3.id = t0.customer_id
                                     left join (select id,`name` plant_name from plants) t4 on t4.id = t0.plant_id
-                                    left join (select id,`name` employee_name from employees) t5 on t5.id = t0.employee_id
+                                    left join (select id,employee_name from employees) t5 on t5.id = t0.employee_id
 								where deleted_at is null ",theDateSet,dueDateSet,updatedAtSet,uIdSet,userIdSet,statusIdSet,employeeIdsSet,outletIdsSet,customerIdsSet,plantIdSet,productIdsSet,keywordSet,"
 								) x where id != 0",ColumnSet,limitSet," ;"));
 	end if;
