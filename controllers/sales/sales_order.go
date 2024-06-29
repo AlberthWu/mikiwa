@@ -87,6 +87,7 @@ func (c *SalesOrderController) Post() {
 	}
 
 	ob.EmployeeId = 1
+	ob.OutletId = 1
 	ob.StatusId = status_id
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")

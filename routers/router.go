@@ -143,6 +143,7 @@ func init() {
 	beego.Router("/v1/plant", &master.PlantController{}, "post:Post")
 	beego.Router("/v1/plant/:id", &master.PlantController{}, "put:Put;get:GetOne;delete:Delete")
 	beego.Router("/v1/plant/list/:id", &master.PlantController{}, "get:GetAllList")
+	beego.Router("/v1/plant/list/outlet", &master.PlantController{}, "get:GetAllListOutlet")
 
 	// customer_types
 	beego.Router("/v1/companytype/list", &master.CompanyTypeController{}, "get:GetAllList")
