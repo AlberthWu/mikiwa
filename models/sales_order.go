@@ -379,18 +379,18 @@ func (t *SalesOrder) GetById(id, user_id int) (m *SalesOrderRtn, err error) {
 	return m, err
 }
 
-func (t *SalesOrder) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id int, id int, plant_id int, employee_ids, outlet_ids, customer_ids, status_ids, product_ids string, issue_date, due_date, updated_at *string) (u utils.PageDynamic, err error) {
+func (t *SalesOrder) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, id, search_detail int, plant_id int, employee_ids, outlet_ids, customer_ids, status_ids, product_ids, lead_time_ids string, issue_date, due_date, updated_at *string) (u utils.PageDynamic, err error) {
 	o := orm.NewOrm()
 	var m []orm.Params
 	var c int
 
-	//  sp_SalesOrderCount(theDate date,dueDate date,updatedAt date,uId int,employeeIds varchar(15),outletIds varchar(15),customerIds varchar(15),plantId int,productIds varchar(15),statusIds varchar(15),reportTypeId int,userId int,keyword varchar(255),in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int )
-	o.Raw("call sp_SalesOrderCount(?,?,?,"+utils.Int2String(id)+",'"+employee_ids+"','"+outlet_ids+"','"+customer_ids+"',"+utils.Int2String(plant_id)+",'"+product_ids+"','"+status_ids+"',1,"+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &due_date, &updated_at).QueryRow(&c)
+	//  sp_SalesOrder(theDate date,dueDate date,updatedAt date,uId int,employeeIds varchar(15),outletIds varchar(15),customerIds varchar(15),plantId int,productIds varchar(15),statusIds varchar(15),in leadTime varchar(5), reportTypeId int,userId int,keyword varchar(255),in searchDetail int,in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int )
+	o.Raw("call sp_SalesOrderCount(?,?,?,"+utils.Int2String(id)+",'"+employee_ids+"','"+outlet_ids+"','"+customer_ids+"',"+utils.Int2String(plant_id)+",'"+product_ids+"','"+status_ids+"','"+lead_time_ids+"',1,"+utils.Int2String(user_id)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &due_date, &updated_at).QueryRow(&c)
 
 	if allsize == 1 && c > 0 {
 		size = c
 	}
-	_, err = o.Raw("call sp_SalesOrder(?,?,?,"+utils.Int2String(id)+",'"+employee_ids+"','"+outlet_ids+"','"+customer_ids+"',"+utils.Int2String(plant_id)+",'"+product_ids+"','"+status_ids+"',1,"+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &issue_date, &due_date, &updated_at).Values(&m)
+	_, err = o.Raw("call sp_SalesOrder(?,?,?,"+utils.Int2String(id)+",'"+employee_ids+"','"+outlet_ids+"','"+customer_ids+"',"+utils.Int2String(plant_id)+",'"+product_ids+"','"+status_ids+"','"+lead_time_ids+"',1,"+utils.Int2String(user_id)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &issue_date, &due_date, &updated_at).Values(&m)
 
 	if c == 0 && err == nil {
 		err = orm.ErrNoRows
@@ -398,12 +398,21 @@ func (t *SalesOrder) GetAll(keyword, field_name, match_mode, value_name string, 
 	} else if err != nil {
 		return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
 	}
-
 	return utils.PaginationDynamic(int(c), p, size, fmt.Sprintf("%v", m[0]["field_key"]), fmt.Sprintf("%v", m[0]["field_label"]), fmt.Sprintf("%v", m[0]["field_int"]), fmt.Sprintf("%v", m[0]["field_level"]), fmt.Sprintf("%v", m[0]["field_export"]), fmt.Sprintf("%v", m[0]["field_export_label"]), fmt.Sprintf("%v", m[0]["field_footer"]), m), err
+}
+
+func (t *SalesOrder) GetAllDetail(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, id, search_detail int, plant_id int, employee_ids, outlet_ids, customer_ids, status_ids, product_ids, lead_time_ids string, issue_date, due_date, updated_at *string) (m []orm.Params, err error) {
+	o := orm.NewOrm()
+	var c int64
+	c, err = o.Raw("call sp_SalesOrder(?,?,?,"+utils.Int2String(id)+",'"+employee_ids+"','"+outlet_ids+"','"+customer_ids+"',"+utils.Int2String(plant_id)+",'"+product_ids+"','"+status_ids+"','"+lead_time_ids+"',0,"+utils.Int2String(user_id)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &due_date, &updated_at).Values(&m)
+	if c == 0 && err == nil {
+		err = orm.ErrNoRows
+	}
+	return m, err
 }
 
 func (c *SalesOrder) GetDetail(id, user_id int) (m []orm.Params) {
 	o := orm.NewOrm()
-	o.Raw("call sp_SalesOrder(null,null,null," + utils.Int2String(id) + ",null,null,null,0,null,null,0," + utils.Int2String(user_id) + ",'',null,null,null,null,null)").Values(&m)
+	o.Raw("call sp_SalesOrder(null,null,null," + utils.Int2String(id) + ",null,null,null,0,null,null,0,''," + utils.Int2String(user_id) + ",'',null,null,null,null,null,null)").Values(&m)
 	return m
 }

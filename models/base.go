@@ -31,11 +31,26 @@ func GeneratePettyCashNumber(issue_date time.Time, company_id, account_id int, c
 	return seqno, transaction_code + stryear + strmonth2 + strnum
 }
 
-func GenerateNumber(issue_date time.Time, pool_id, company_id int) (int, string) {
+func GenerateNumber(issue_date time.Time, pool_id, customer_id int) (int, string) {
 	o := orm.NewOrm()
 	var seqno int
 	var format string
-	qb := []string{"call sp_GenerateNumber('" + issue_date.Format("2006-01-02") + "','SalesOrder'," + utils.Int2String(pool_id) + "," + utils.Int2String(company_id) + ")"}
+	qb := []string{"call sp_GenerateNumber('" + issue_date.Format("2006-01-02") + "','SalesOrder'," + utils.Int2String(pool_id) + "," + utils.Int2String(customer_id) + ")"}
+
+	sql := strings.Join(qb, "")
+
+	o.Raw(sql).QueryRow(&seqno, &format)
+	if seqno == 0 {
+		seqno = 1
+	}
+	return seqno, format
+}
+
+func GenerateBatchNumber(issue_date time.Time, outlet_id, customer_id int) (int, string) {
+	o := orm.NewOrm()
+	var seqno int
+	var format string
+	qb := []string{"call sp_GenerateNumber('" + issue_date.Format("2006-01-02") + "','DeliveryOrder'," + utils.Int2String(outlet_id) + "," + utils.Int2String(customer_id) + ")"}
 
 	sql := strings.Join(qb, "")
 
