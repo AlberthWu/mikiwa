@@ -38,11 +38,11 @@ const (
 	CustomerOthers = 3
 	Warehouse      = 4
 	Sparepart      = 5
-	Transporter    = 8
-	Goods          = 9
-	Others         = 10
-	Partner        = 11
-	Insurance      = 12
+	Transporter    = 6
+	Goods          = 7
+	Others         = 8
+	Partner        = 9
+	Insurance      = 10
 )
 
 const (
@@ -53,6 +53,13 @@ const (
 	RejectSo   = 5
 	CloseSo    = 6
 	VoidSo     = 99
+)
+
+const (
+	OpenDo     = 1
+	ProgressDo = 2
+	CompleteDo = 3
+	VoidDo     = 99
 )
 
 func (c *BaseController) Prepare() {

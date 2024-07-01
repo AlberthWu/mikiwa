@@ -11,7 +11,7 @@ BEGIN
     declare headerIdSet varchar(255);
     declare referenceNo varchar(25);
     declare outletId varchar(5) default (select plant_code from plants where id = outletId);
-	declare Toroman varchar(2) default (select fn_ToRoman(month(issueDate))) ;
+	declare Toroman varchar(5) default (select fn_ToRoman(month(issueDate))) ;
  
     SET headerIdSet = headerId;
     DROP TEMPORARY TABLE  IF EXISTS temp_invoice_number;

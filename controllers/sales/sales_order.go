@@ -904,7 +904,71 @@ func (c *SalesOrderController) Put() {
 	c.ServeJSON()
 }
 
-func (c *SalesOrderController) Delete() {}
+func (c *SalesOrderController) Delete() {
+	var user_id, form_id int
+	var err error
+	var user_name string
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+		user_name = sess.(map[string]interface{})["username"].(string)
+	}
+	form_id = base.FormName(form_sales_order)
+	delete_aut := models.CheckPrivileges(user_id, form_id, base.Delete)
+	if !delete_aut {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Delete not authorize", map[string]interface{}{"message": "Please contact administrator"})
+		c.ServeJSON()
+		return
+	}
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+
+	var querydata models.SalesOrder
+	err = models.SalesOrders().Filter("id", id).Filter("deleted_at__isnull", true).One(&querydata)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, "Sales order id unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
+	if querydata.StatusId == base.ConfirmSo {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to delete", fmt.Sprintf("'%v' has been CONFIRMED", querydata.ReferenceNo))
+		c.ServeJSON()
+		return
+	}
+
+	if querydata.StatusId == base.ProgressSo {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to delete", fmt.Sprintf("'%v' is ON PROGRESS", querydata.ReferenceNo))
+		c.ServeJSON()
+		return
+	}
+
+	if querydata.StatusId == base.DoneSo {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to delete", fmt.Sprintf("'%v' has been DONE", querydata.ReferenceNo))
+		c.ServeJSON()
+		return
+	}
+
+	// to check invoiced
+
+	models.SalesOrders().Filter("id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
+	models.SalesOrderDetails().Filter("sales_order_id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
+
+	utils.ReturnHTTPError(&c.Controller, 200, "soft delete success")
+	c.ServeJSON()
+}
+
 func (c *SalesOrderController) GetOne() {
 	var user_id int
 	sess := c.GetSession("profile")
@@ -927,6 +991,7 @@ func (c *SalesOrderController) GetOne() {
 	}
 	c.ServeJSON()
 }
+
 func (c *SalesOrderController) GetAll() {
 	var user_id int
 	sess := c.GetSession("profile")
@@ -950,6 +1015,7 @@ func (c *SalesOrderController) GetAll() {
 	value_name := strings.TrimSpace(c.GetString("value_name"))
 	field_name := strings.TrimSpace(c.GetString("field_name"))
 	allsize, _ := c.GetInt("allsize")
+	search_detail, _ := c.GetInt("search_detail")
 
 	status_ids := strings.TrimSpace(c.GetString("status_ids"))
 	issue_date := strings.TrimSpace(c.GetString("issue_date"))
@@ -960,6 +1026,7 @@ func (c *SalesOrderController) GetAll() {
 	customer_ids := strings.TrimSpace(c.GetString("customer_ids"))
 	plant_id, _ := c.GetInt("plant_id")
 	product_ids := strings.TrimSpace(c.GetString("product_ids"))
+	lead_time_ids := strings.TrimSpace(c.GetString("lead_time_ids"))
 
 	if issue_date == "" {
 		issueDate = nil
@@ -982,7 +1049,79 @@ func (c *SalesOrderController) GetAll() {
 		updatedat = &updated_at
 	}
 
-	d, err := t_sales_order.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, 0, plant_id, employee_ids, outlet_ids, customer_ids, status_ids, product_ids, issueDate, dueDate, updatedat)
+	d, err := t_sales_order.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, 0, search_detail, plant_id, employee_ids, outlet_ids, customer_ids, status_ids, product_ids, lead_time_ids, issueDate, dueDate, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *SalesOrderController) GetAllDetail() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	var issueDate, updatedat, dueDate *string
+
+	currentPage, _ := c.GetInt("page")
+	if currentPage == 0 {
+		currentPage = 1
+	}
+
+	pageSize, _ := c.GetInt("pagesize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+	allsize, _ := c.GetInt("allsize")
+	search_detail, _ := c.GetInt("search_detail")
+
+	status_ids := strings.TrimSpace(c.GetString("status_ids"))
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	due_date := strings.TrimSpace(c.GetString("due_date"))
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	outlet_ids := strings.TrimSpace(c.GetString("outlet_ids"))
+	employee_ids := strings.TrimSpace(c.GetString("employee_ids"))
+	customer_ids := strings.TrimSpace(c.GetString("customer_ids"))
+	plant_id, _ := c.GetInt("plant_id")
+	product_ids := strings.TrimSpace(c.GetString("product_ids"))
+	lead_time_ids := strings.TrimSpace(c.GetString("lead_time_ids"))
+
+	if issue_date == "" {
+		issueDate = nil
+
+	} else {
+		issueDate = &issue_date
+	}
+
+	if due_date == "" {
+		dueDate = nil
+
+	} else {
+		dueDate = &due_date
+	}
+
+	if updated_at == "" {
+		updatedat = nil
+
+	} else {
+		updatedat = &updated_at
+	}
+
+	d, err := t_sales_order.GetAllDetail(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, 0, search_detail, plant_id, employee_ids, outlet_ids, customer_ids, status_ids, product_ids, lead_time_ids, issueDate, dueDate, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
