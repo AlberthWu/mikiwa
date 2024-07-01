@@ -61,7 +61,7 @@ func (c *CompanyController) Post() {
 	iscash, _ := c.GetInt8("is_cash")
 	status, _ := c.GetInt8("status")
 	company_type := strings.TrimSpace(c.GetString("company_type"))
-	business_type := strings.TrimSpace(c.GetString("business_type"))
+	business_unit := strings.TrimSpace(c.GetString("business_unit"))
 	bank_id, _ := c.GetInt("bank_id")
 	bank_no := strings.TrimSpace(c.GetString("bank_no"))
 	bank_account_name := strings.TrimSpace(c.GetString("bank_account_name"))
@@ -80,7 +80,7 @@ func (c *CompanyController) Post() {
 	valid.Required(bank_id, "bank_id").Message("is required")
 	valid.Required(cityId, "city_id").Message("is required")
 	valid.Required(company_type, "company_type").Message("is required")
-	valid.Required(business_type, "business_type").Message("is required")
+	valid.Required(business_unit, "business_unit").Message("is required")
 
 	if valid.HasErrors() {
 		out := make([]utils.ApiError, len(valid.Errors))
@@ -123,7 +123,7 @@ func (c *CompanyController) Post() {
 	}
 
 	var businessUnit models.BusinessUnit
-	buIdArray := strings.Split(business_type, ",")
+	buIdArray := strings.Split(business_unit, ",")
 	for _, bu := range buIdArray {
 		err = models.BusinessUnits().Filter("id", utils.String2Int(strings.TrimSpace(bu))).One(&businessUnit)
 		if err == orm.ErrNoRows {
@@ -194,7 +194,7 @@ func (c *CompanyController) Post() {
 			return
 		}
 
-		_, err_ = t_company_business_unit.InsertM2M(d.Id, business_type)
+		_, err_ = t_company_business_unit.InsertM2M(d.Id, business_unit)
 		errcode, errmessage = base.DecodeErr(err_)
 		if err_ != nil {
 			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
@@ -277,7 +277,7 @@ func (c *CompanyController) Put() {
 	iscash, _ := c.GetInt8("is_cash")
 	status, _ := c.GetInt8("status")
 	company_type := strings.TrimSpace(c.GetString("company_type"))
-	business_type := strings.TrimSpace(c.GetString("business_type"))
+	business_unit := strings.TrimSpace(c.GetString("business_unit"))
 	bank_id, _ := c.GetInt("bank_id")
 	bank_no := strings.TrimSpace(c.GetString("bank_no"))
 	bank_account_name := strings.TrimSpace(c.GetString("bank_account_name"))
@@ -296,7 +296,7 @@ func (c *CompanyController) Put() {
 	valid.Required(bank_id, "bank_id").Message("is required")
 	valid.Required(cityId, "city_id").Message("is required")
 	valid.Required(company_type, "company_type").Message("is required")
-	valid.Required(business_type, "business_type").Message("is required")
+	valid.Required(business_unit, "business_unit").Message("is required")
 
 	if valid.HasErrors() {
 		out := make([]utils.ApiError, len(valid.Errors))
@@ -339,7 +339,7 @@ func (c *CompanyController) Put() {
 	}
 
 	var businessUnit models.BusinessUnit
-	buIdArray := strings.Split(business_type, ",")
+	buIdArray := strings.Split(business_unit, ",")
 	for _, bu := range buIdArray {
 		err = models.BusinessUnits().Filter("id", utils.String2Int(strings.TrimSpace(bu))).One(&businessUnit)
 		if err == orm.ErrNoRows {
@@ -408,7 +408,7 @@ func (c *CompanyController) Put() {
 			return
 		}
 
-		_, err_ = t_company_business_unit.InsertM2M(id, business_type)
+		_, err_ = t_company_business_unit.InsertM2M(id, business_unit)
 		errcode, errmessage = base.DecodeErr(err_)
 		if err_ != nil {
 			utils.ReturnHTTPError(&c.Controller, errcode, errmessage)
