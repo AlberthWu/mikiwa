@@ -448,7 +448,7 @@ func (t *Plant) GetById(id int) (m *Plant, err error) {
 func (t *Plant) GetAllList(company_id int, keyword string) (m []SimplePlantRtnJson, err error) {
 	o := orm.NewOrm()
 	var num int64
-	num, err = o.Raw("select * from (select id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(company_id) + ") x where full_name like '%" + keyword + "%' ").QueryRows(&m)
+	num, err = o.Raw("select * from (select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(company_id) + ") x where full_name like '%" + keyword + "%' ").QueryRows(&m)
 
 	if num == 0 && err == nil {
 		err = orm.ErrNoRows
