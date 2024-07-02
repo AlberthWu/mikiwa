@@ -1041,12 +1041,12 @@ func (c *DoController) Cancel() {
 }
 
 func (c *DoController) JobList() {
-	var user_id, form_id int
-	sess := c.GetSession("profile")
-	if sess != nil {
-		user_id = sess.(map[string]interface{})["id"].(int)
-	}
-	form_id = base.FormName(form_do)
-	warehouse_plant_id, _ := c.GetInt("warehouse_plant_id")
+	// var user_id, form_id int
+	// sess := c.GetSession("profile")
+	// if sess != nil {
+	// 	user_id = sess.(map[string]interface{})["id"].(int)
+	// }
+	// form_id = base.FormName(form_do)
+	// warehouse_plant_id, _ := c.GetInt("warehouse_plant_id")
 
 }
