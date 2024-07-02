@@ -47,6 +47,7 @@ type (
 		Barcode             string    `json:"barcode" orm:"column(barcode)"`
 		UomId               int       `json:"uom_id" orm:"column(uom_id)"`
 		UomCode             string    `json:"uom_code" orm:"column(uom_code)"`
+		Price               float64   `json:"price" orm:"column(price);digits(18);decimals(2);default(0)"`
 		LeadTime            int       `json:"lead_time" orm:"column(lead_time)"`
 		StatusId            int8      `json:"status_id" orm:"column(status_id)"`
 		CreatedAt           time.Time `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
@@ -228,6 +229,7 @@ type (
 		LeadTime          int                 `json:"lead_time"`
 		UomId             int                 `json:"uom_id"`
 		UomCode           string              `json:"uom_code"`
+		Price             float64             `json:"price"`
 		StatusId          int                 `json:"status_id"`
 		UomList           []ProductUomRtnJson `json:"uom"`
 		Document          []DocumentRtn       `json:"document"`
@@ -248,15 +250,16 @@ type (
 	}
 
 	SimpleProductRtn struct {
-		Id           int    `json:"id"`
-		ProductCode  string `json:"product_code"`
-		ProductName  string `json:"product_name"`
-		SerialNumber string `json:"serial_number"`
-		ArtNo        string `json:"art_no"`
-		Barcode      string `json:"barcode"`
-		LeadTime     int    `json:"lead_time"`
-		UomId        int    `json:"uom_id"`
-		UomCode      string `json:"uom_code"`
+		Id           int     `json:"id"`
+		ProductCode  string  `json:"product_code"`
+		ProductName  string  `json:"product_name"`
+		SerialNumber string  `json:"serial_number"`
+		ArtNo        string  `json:"art_no"`
+		Barcode      string  `json:"barcode"`
+		LeadTime     int     `json:"lead_time"`
+		UomId        int     `json:"uom_id"`
+		UomCode      string  `json:"uom_code"`
+		Price        float64 `json:"price"`
 	}
 
 	ProductConversionRtnJson struct {
@@ -487,6 +490,7 @@ func (t *Product) GetById(id, user_id int) (m *ProductRtn, err error) {
 		LeadTime:          d.LeadTime,
 		UomId:             d.UomId,
 		UomCode:           d.UomCode,
+		Price:             d.Price,
 		StatusId:          int(d.StatusId),
 		UomList:           ulist,
 		Document:          dlist,

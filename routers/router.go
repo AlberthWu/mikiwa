@@ -144,6 +144,7 @@ func init() {
 	beego.Router("/v1/plant/:id", &master.PlantController{}, "put:Put;get:GetOne;delete:Delete")
 	beego.Router("/v1/plant/list/:id", &master.PlantController{}, "get:GetAllList")
 	beego.Router("/v1/plant/list/outlet", &master.PlantController{}, "get:GetAllListOutlet")
+	beego.Router("/v1/plant/list/warehouse", &master.PlantController{}, "get:GetAllListWarehouse")
 
 	// customer_types
 	beego.Router("/v1/companytype/list", &master.CompanyTypeController{}, "get:GetAllList")
@@ -164,4 +165,12 @@ func init() {
 	beego.Router("/v1/sales/order", &sales.SalesOrderController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/sales/order/detail", &sales.SalesOrderController{}, "get:GetAllDetail")
 	beego.Router("/v1/sales/order/:id", &sales.SalesOrderController{}, "put:Put;get:GetOne;delete:Delete")
+	// beego.Router("/v1/sales/order/confirm/:id", &sales.SalesOrderController{}, "put:Put;get:GetOne;delete:Delete")
+
+	// delivery_order
+	beego.Router("/v1/delivery/order", &sales.DoController{}, "post:Post;get:GetAll")
+	beego.Router("/v1/delivery/order/:id", &sales.DoController{}, "put:Put;delete:Delete;get:GetOne")
+	beego.Router("/v1/delivery/order/confirm/:id", &sales.DoController{}, "post:Confirm")
+	beego.Router("/v1/delivery/order/cancel/:id", &sales.DoController{}, "post:Cancel")
+	beego.Router("/v1/delivery/order/delivery/:id", &sales.DoController{}, "post:Delivery")
 }

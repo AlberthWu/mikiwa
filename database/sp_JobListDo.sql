@@ -1,8 +1,8 @@
 SET GLOBAL log_bin_trust_function_creators = 1;
 
-DROP PROCEDURE IF EXISTS sp_SalesOrder;
+DROP PROCEDURE IF EXISTS sp_JobListDo;
 DELIMITER $$
-CREATE PROCEDURE sp_SalesOrder(theDate date,dueDate date,updatedAt date,uId int,employeeIds varchar(15),outletIds varchar(15),customerIds varchar(15),plantId int,productIds varchar(15),statusIds varchar(15),in leadTime varchar(5), reportTypeId int,userId int,keyword varchar(255),in searchDetail int,in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int ) 
+CREATE PROCEDURE sp_JobListDo(theDate date,dueDate date,updatedAt date,uId int,employeeIds varchar(15),outletIds varchar(15),customerIds varchar(15),plantId int,productIds varchar(15),statusIds varchar(15),in leadTime varchar(5), reportTypeId int,userId int,keyword varchar(255),in searchDetail int,in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int ) 
 BEGIN
 	declare keywordProductSet varchar(8000);
 	declare keywordSet varchar(8000);
@@ -60,7 +60,7 @@ BEGIN
     set outletIdsSet = case when (outletIds is null or outletIds = '') then '' else concat(" and (t0.outlet_id in (",replace(outletIds,'''',''),")") end ;
     set customerIdsSet = case when (customerIds is null or customerIds = '') then '' else concat(" and (t0.customer_id in (",replace(customerIds,'''',''),")") end ;
     set plantIdSet = case when (plantId is null or plantId = 0) then '' else concat(" and (t0.plant_id = ",plantId) end ;
-    set productIdsSet = case when (productIds is null or productIds = '') then '' else concat(" and t0.id in (select sales_order_id from sales_order_detail where deleted_at is null and t0.product_id in (",replace(productIds,'''',''),"))") end ;
+    set productIdsSet = case when (productIds is null or productIds = '') then '' else concat(" and t0.id in (select product_id from sales_order_detail where deleted_at is null and t0.product_id in (",replace(productIds,'''',''),"))") end ;
 	if searchDetail = 1 then
 		set keywordProductSet = case when (keyword is null or keyword = '') then '' else concat(" and  (t1.product_code like '%",keyword,"%' or t1.product_name like '%",keyword,"%' or t1.art_no like '%",keyword,"%' or t1.barcode like '%",keyword,"%')")   end;
 		SET keywordSet  = case when (keyword is null or keyword = '') then '' else concat(" and t0.id in (select sales_order_id from sales_order_detail t0 left join (select id,product_code,product_name,art_no,barcode from products) t1 on t1.id = t0.product_id 

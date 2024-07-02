@@ -44,6 +44,7 @@ func (c *PlantController) Post() {
 	}
 
 	company_id, _ := c.GetInt("company_id")
+	code := strings.TrimSpace(c.GetString("code"))
 	name := strings.TrimSpace(c.GetString("name"))
 	pic := strings.TrimSpace(c.GetString("pic"))
 	phone := strings.TrimSpace(c.GetString("phone"))
@@ -80,6 +81,7 @@ func (c *PlantController) Post() {
 
 	valid := validation.Validation{}
 	valid.Required(company_id, "company_id").Message("Company is required")
+	valid.Required(code, "code").Message("Code is required")
 	valid.Required(name, "name").Message("Name is required")
 	valid.MinSize(name, 3, "name").Message("Name min char is 3")
 	valid.MaxSize(name, 175, "name").Message("Name max char is 175")
@@ -97,6 +99,7 @@ func (c *PlantController) Post() {
 
 	t_plant := models.Plant{
 		CompanyId:   company_id,
+		Code:        code,
 		Name:        name,
 		Pic:         pic,
 		Phone:       phone,
@@ -149,6 +152,7 @@ func (c *PlantController) Put() {
 	}
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	company_id, _ := c.GetInt("company_id")
+	code := strings.TrimSpace(c.GetString("code"))
 	name := strings.TrimSpace(c.GetString("name"))
 	pic := strings.TrimSpace(c.GetString("pic"))
 	phone := strings.TrimSpace(c.GetString("phone"))
@@ -185,6 +189,7 @@ func (c *PlantController) Put() {
 
 	valid := validation.Validation{}
 	valid.Required(company_id, "company_id").Message("Company is required")
+	valid.Required(code, "code").Message("Code is required")
 	valid.Required(name, "name").Message("Name is required")
 	valid.MinSize(name, 3, "name").Message("Name min char is 3")
 	valid.MaxSize(name, 175, "name").Message("Name max char is 175")
@@ -202,6 +207,7 @@ func (c *PlantController) Put() {
 
 	t_plant.Id = id
 	t_plant.CompanyId = company_id
+	t_plant.Code = code
 	t_plant.Name = name
 	t_plant.Pic = pic
 	t_plant.Phone = phone
@@ -289,7 +295,7 @@ func (c *PlantController) GetAllList() {
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	keyword := strings.TrimSpace(c.GetString("keyword"))
 
-	d, err := t_plant.GetAllList(id, keyword)
+	d, err := t_plant.GetAllList(id, 0, keyword)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -307,8 +313,27 @@ func (c *PlantController) GetAllList() {
 func (c *PlantController) GetAllListOutlet() {
 	keyword := strings.TrimSpace(c.GetString("keyword"))
 
-	company_id := 1
-	d, err := t_plant.GetAllList(company_id, keyword)
+	company_id := base.Internal
+	d, err := t_plant.GetAllList(company_id, 0, keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *PlantController) GetAllListWarehouse() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	type_id := base.Warehouse
+	d, err := t_plant.GetAllList(0, type_id, keyword)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
