@@ -47,6 +47,7 @@ type (
 		Disc1     float64 `json:"disc1"`
 		Disc2     float64 `json:"disc2"`
 		DiscTpr   float64 `json:"disc_tpr"`
+		CreatedBy string  `json:"created_by"`
 	}
 )
 
@@ -87,7 +88,6 @@ func (c *SalesOrderController) Post() {
 	}
 
 	ob.EmployeeId = 1
-	ob.OutletId = 1
 	ob.StatusId = status_id
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")
@@ -189,8 +189,7 @@ func (c *SalesOrderController) Post() {
 	var subtotal, disc1, disc2, disctpr, totalDisc, dpp, price, normal_price, nettprice, subtotal_, totalDisc_ float64
 	var ppn int
 	for _, v := range ob.Detail {
-		err = models.Products().Filter("id", v.ProductId).Filter("deleted_at__isnull", true).Filter("product_type_id", 3).One(&products)
-		if err == orm.ErrNoRows {
+		if err = o.Raw("select * from products where deleted_at is null and product_type_id = " + utils.Int2String(base.ProductFinishing) + " and product_division_id in (select business_unit_id from company_business_unit where company_id = " + utils.Int2String(ob.CustomerId) + ") and id = " + utils.Int2String(v.ProductId)).QueryRow(&products); err == orm.ErrNoRows {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, "Product unregistered/Illegal data")
 			c.ServeJSON()
@@ -616,6 +615,7 @@ func (c *SalesOrderController) Put() {
 		return
 	}
 
+	var querydetail models.SalesOrderDetail
 	var products models.Product
 	var productUom models.ProductUom
 	var priceRtn *models.ProductConversionRtnJson
@@ -631,7 +631,21 @@ func (c *SalesOrderController) Put() {
 			defer wg.Done()
 			mutex.Lock()
 			defer mutex.Unlock()
-			if err = models.Products().Filter("id", v.ProductId).Filter("deleted_at__isnull", true).Filter("product_type_id", 3).One(&products); err == orm.ErrNoRows {
+			if v.Id != 0 {
+				if err = models.SalesOrderDetails().Filter("deleted_at__isnull", true).Filter("sales_order_id", id).Filter("id", v.Id).One(&querydetail); err == orm.ErrNoRows {
+					resultChan <- utils.ResultChan{Id: v.ProductId, Data: "Invalid detail id", Message: "detail unregistered/Illegal data"}
+					return
+				}
+
+				if err != nil {
+					resultChan <- utils.ResultChan{Id: v.ProductId, Data: products.ProductCode, Message: err.Error()}
+					return
+				}
+
+				v.CreatedBy = querydetail.CreatedBy
+			}
+
+			if err = o.Raw("select * from products where deleted_at is null and product_type_id = " + utils.Int2String(base.ProductFinishing) + " and product_division_id in (select business_unit_id from company_business_unit where company_id = " + utils.Int2String(ob.CustomerId) + ") and id = " + utils.Int2String(v.ProductId)).QueryRow(&products); err == orm.ErrNoRows {
 				resultChan <- utils.ResultChan{Id: v.ProductId, Data: "Invalid product", Message: "product unregistered/Illegal data"}
 				return
 			}
@@ -870,7 +884,7 @@ func (c *SalesOrderController) Put() {
 					ConversionQty:     priceRtn.ConversionQty,
 					ConversionUomId:   priceRtn.ConversionUomId,
 					ConversionUomCode: priceRtn.ConversionUomCode,
-					CreatedBy:         user_name,
+					CreatedBy:         v.CreatedBy,
 					UpdatedBy:         user_name,
 				})
 			}

@@ -148,6 +148,7 @@ func (c *ProductController) Post() {
 
 	var uom_id int
 	var uom_code string
+	var price float64
 
 	var uom models.Uom
 	for _, v := range ob.Uom {
@@ -176,6 +177,7 @@ func (c *ProductController) Post() {
 		if v.IsDefault == 1 {
 			uom_id = v.UomId
 			uom_code = uom.UomCode
+			price = v.Price
 			i += 1
 		}
 	}
@@ -202,6 +204,7 @@ func (c *ProductController) Post() {
 		SerialNumber:        ob.SerialNumber,
 		Barcode:             ob.Barcode,
 		ArtNo:               ob.ArtNo,
+		Price:               price,
 		UomId:               uom_id,
 		UomCode:             uom_code,
 		LeadTime:            ob.LeadTime,
@@ -383,6 +386,7 @@ func (c *ProductController) Put() {
 
 	var uom_id int
 	var uom_code string
+	var price float64
 
 	var uom models.Uom
 	for _, v := range ob.Uom {
@@ -411,6 +415,7 @@ func (c *ProductController) Put() {
 		if v.IsDefault == 1 {
 			uom_id = v.UomId
 			uom_code = uom.UomCode
+			price = v.Price
 			i += 1
 		}
 	}
@@ -439,6 +444,7 @@ func (c *ProductController) Put() {
 	t_product.Barcode = ob.Barcode
 	t_product.UomId = uom_id
 	t_product.UomCode = uom_code
+	t_product.Price = price
 	t_product.LeadTime = ob.LeadTime
 	t_product.StatusId = ob.StatusId
 	t_product.CreatedBy = querydata.CreatedBy

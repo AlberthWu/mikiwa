@@ -46,11 +46,11 @@ func GenerateNumber(issue_date time.Time, pool_id, customer_id int) (int, string
 	return seqno, format
 }
 
-func GenerateBatchNumber(issue_date time.Time, outlet_id, customer_id int) (int, string) {
+func GenerateBatchNumber(issue_date time.Time, warehouse_id, outlet_id, customer_id int, transaction string) (int, string) {
 	o := orm.NewOrm()
 	var seqno int
 	var format string
-	qb := []string{"call sp_GenerateNumber('" + issue_date.Format("2006-01-02") + "','DeliveryOrder'," + utils.Int2String(outlet_id) + "," + utils.Int2String(customer_id) + ")"}
+	qb := []string{"call sp_GenerateNumber('" + issue_date.Format("2006-01-02") + "','" + transaction + "'," + utils.Int2String(outlet_id) + "," + utils.Int2String(customer_id) + ")"}
 
 	sql := strings.Join(qb, "")
 

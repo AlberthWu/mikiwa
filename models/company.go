@@ -50,6 +50,7 @@ type (
 	Plant struct {
 		Id          int       `json:"id"  orm:"column(id);auto;pk"`
 		CompanyId   int       `json:"company_id" orm:"column(company_id)"`
+		Code        string    `json:"code" orm:"column(code);size(25)"`
 		Name        string    `json:"name" orm:"column(name);size(200)"`
 		Pic         string    `json:"pic" orm:"column(pic);size(200)"`
 		Phone       string    `json:"phone" orm:"column(phone);size(200)"`
@@ -211,6 +212,7 @@ type (
 
 	PlantRtnJson struct {
 		Id          int    `json:"id"`
+		Code        string `json:"code"`
 		Name        string `json:"name"`
 		Pic         string `json:"pic"`
 		Address     string `json:"address"`
@@ -225,10 +227,13 @@ type (
 	}
 
 	SimplePlantRtnJson struct {
-		Id        int    `json:"id"`
-		Name      string `json:"name"`
-		FullName  string `json:"full_name"`
-		CompanyId int    `json:"company_id"`
+		Id          int    `json:"id"`
+		Code        string `json:"code"`
+		Name        string `json:"name"`
+		FullName    string `json:"full_name"`
+		CompanyId   int    `json:"company_id"`
+		CompanyCode string `json:"company_code"`
+		Status      int8   `json:"status"`
 	}
 
 	SimpleCompanyRtnJson struct {
@@ -264,6 +269,7 @@ func (t *Company) GetById(id, user_id int) (m *CompanyDetailReturn, err error) {
 	for _, plantval := range plants {
 		plantrtn = append(plantrtn, PlantRtnJson{
 			Id:         plantval.Id,
+			Code:       plantval.Code,
 			Name:       plantval.Name,
 			Address:    plantval.Address,
 			Status:     plantval.Status,
@@ -385,7 +391,7 @@ func (t *Company) GetAll(keyword, field_name, match_mode, value_name string, p, 
 
 func (c *Company) GetDetail(id int) (m []PlantRtnJson) {
 	o := orm.NewOrm()
-	o.Raw("select t0.id,name,pic,address,is_do,is_po,is_schedule,is_receipt,price_method,status,company_id,concat(t1.code,' - ',t0.name) full_name from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(id) + "").QueryRows(&m)
+	o.Raw("select t0.id,t0.code,name,pic,address,is_do,is_po,is_schedule,is_receipt,price_method,status,company_id,concat(t1.code,' - ',t0.name) full_name from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(id) + "").QueryRows(&m)
 	return m
 }
 
@@ -445,10 +451,15 @@ func (t *Plant) GetById(id int) (m *Plant, err error) {
 	return m, err
 }
 
-func (t *Plant) GetAllList(company_id int, keyword string) (m []SimplePlantRtnJson, err error) {
+func (t *Plant) GetAllList(company_id, company_type_id int, keyword string) (m []SimplePlantRtnJson, err error) {
 	o := orm.NewOrm()
 	var num int64
-	num, err = o.Raw("select * from (select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(company_id) + ") x where full_name like '%" + keyword + "%' ").QueryRows(&m)
+
+	if company_type_id != 0 {
+		num, err = o.Raw("select * from (select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id in (select company_id from company_type where type_id = " + utils.Int2String(company_type_id) + ")) x where full_name like '%" + keyword + "%' ").QueryRows(&m)
+	} else {
+		num, err = o.Raw("select * from (select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(company_id) + ") x where full_name like '%" + keyword + "%' ").QueryRows(&m)
+	}
 
 	if num == 0 && err == nil {
 		err = orm.ErrNoRows

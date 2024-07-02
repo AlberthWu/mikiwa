@@ -345,10 +345,10 @@ func (t *SalesOrder) GetById(id, user_id int) (m *SalesOrderRtn, err error) {
 	o.Raw("select id,name,status  from pools where id  = " + utils.Int2String(t.PoolId) + " ").QueryRow(&pool)
 
 	var outlet SimplePlantRtnJson
-	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(t.OutletId) + "").QueryRow(&outlet)
+	o.Raw("select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(t.OutletId) + "").QueryRow(&outlet)
 
 	var plant SimplePlantRtnJson
-	o.Raw("select t0.id,name,concat(t1.code,' - ',t0.name) full_name,company_id from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(t.PlantId) + "").QueryRow(&plant)
+	o.Raw("select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(t.PlantId) + "").QueryRow(&plant)
 
 	dlist := t.GetDetail(id, user_id)
 

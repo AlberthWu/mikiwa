@@ -58,9 +58,32 @@ const (
 const (
 	OpenDo     = 1
 	ProgressDo = 2
-	CompleteDo = 3
+	ShippedDo  = 3
+	CompleteDo = 4
 	VoidDo     = 99
 )
+
+const (
+	ProductRaw         = 1
+	ProductWip         = 2
+	ProductFinishing   = 3
+	ProductAccessories = 4
+	ProductOthers      = 5
+	ProductRecycle     = 6
+)
+
+var StatusDoString = map[int]string{
+	OpenDo:     "Open",
+	ProgressDo: "Progress",
+	ShippedDo:  "Shipping",
+	CompleteDo: "Complete",
+	VoidDo:     "Void",
+}
+
+func GetStatusDo(b int) string {
+	s := StatusDoString[b]
+	return s
+}
 
 func (c *BaseController) Prepare() {
 	o := orm.NewOrm()

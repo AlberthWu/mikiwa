@@ -218,6 +218,8 @@ func (t *Price) GetAll(keyword, field_name, match_mode, value_name string, p, si
 
 func (c *Price) GetDetail(id, user_id int) (m []orm.Params) {
 	o := orm.NewOrm()
-	o.Raw("call sp_price(null,null," + utils.Int2String(id) + ",null,null,null,null,0," + utils.Int2String(user_id) + ",'',null,null,null,null,null)").Values(&m)
+	if num, _ := o.Raw("call sp_price(null,null," + utils.Int2String(id) + ",null,null,null,null,0," + utils.Int2String(user_id) + ",'',null,null,null,null,null)").Values(&m); num == 0 {
+		o.Raw("call sp_price(null,null,null,null,null,null,null,0," + utils.Int2String(user_id) + ",'',null,null,null,null,null)").Values(&m)
+	}
 	return m
 }
