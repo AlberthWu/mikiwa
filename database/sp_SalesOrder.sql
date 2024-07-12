@@ -107,7 +107,7 @@ BEGIN
 											left join (select id,`code` customer_code,`name` customer_name from companies) t3 on t3.id = t0.customer_id
 											left join (select id,`name` plant_name from plants) t4 on t4.id = t0.plant_id
 											left join (select id, employee_name from employees) t5 on t5.id = t0.employee_id
-										where deleted_at is null ",theDateSet,dueDateSet,updatedAtSet,uIdSet,userIdSet,statusIdSet,employeeIdsSet,outletIdsSet,customerIdsSet,plantIdSet,productIdsSet,keywordSet,leadTimeSet,")",limitSet,") x ;"));
+										where deleted_at is null ",theDateSet,dueDateSet,updatedAtSet,uIdSet,userIdSet,statusIdSet,employeeIdsSet,outletIdsSet,customerIdsSet,plantIdSet,productIdsSet,keywordSet,leadTimeSet,limitSet,") ) x ;"));
 		end if;
 	else
 		SET @s =  (concat ("select id,id sales_order_id,reference_no,issue_date,lead_time,due_date,over_due,pool_id,pool_name,outlet_id,outlet_name,customer_id,customer_code,customer_name,plant_id,plant_name,full_name,terms,delivery_address,employee_id,employee_name
