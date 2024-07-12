@@ -642,7 +642,6 @@ func (c *SalesOrderController) Put() {
 					return
 				}
 
-				v.CreatedBy = querydetail.CreatedBy
 			}
 
 			if err = o.Raw("select * from products where deleted_at is null and product_type_id = " + utils.Int2String(base.ProductFinishing) + " and product_division_id in (select business_unit_id from company_business_unit where company_id = " + utils.Int2String(ob.CustomerId) + ") and id = " + utils.Int2String(v.ProductId)).QueryRow(&products); err == orm.ErrNoRows {
@@ -668,7 +667,7 @@ func (c *SalesOrderController) Put() {
 
 			err = o.Raw("select * from product_uom where product_id = " + utils.Int2String(v.ProductId) + " and uom_id = " + utils.Int2String(v.UomId)).QueryRow(&productUom)
 			if err == orm.ErrNoRows {
-				resultChan <- utils.ResultChan{Id: v.ProductId, Data: products.ProductCode, Message: fmt.Sprintf("product uom unregistered/Illegal data")}
+				resultChan <- utils.ResultChan{Id: v.ProductId, Data: products.ProductCode, Message: "product uom unregistered/Illegal data"}
 				return
 			}
 
@@ -677,6 +676,7 @@ func (c *SalesOrderController) Put() {
 				return
 			}
 		}(v)
+		v.CreatedBy = querydetail.CreatedBy
 
 		priceRtn = products.GetConversion(ob.IssueDate, v.Qty, ob.CustomerId, v.ProductId, v.UomId, user_id)
 		if priceRtn == nil {

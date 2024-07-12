@@ -94,7 +94,7 @@ BEGIN
 									deleted_at is null",userIdSet,warehouseIdsSet,warehousePlantIdsSet,statusIdSet,outletIdsSet,customerIdsSet,plantIdsSet,keywordSet,") x ;"));
 		
     else
-    
+		
     end if;
 	PREPARE stmt FROM @s;
 	EXECUTE stmt;

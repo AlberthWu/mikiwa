@@ -702,8 +702,6 @@ func (c *DoController) Put() {
 					resultChan <- utils.ResultChan{Id: v.ProductId, Data: products.ProductCode, Message: err.Error()}
 					return
 				}
-
-				v.CreatedBy = querydetail.CreatedBy
 			}
 
 			if err = o.Raw("select * from products where deleted_at is null and product_type_id = " + utils.Int2String(base.ProductFinishing) + " and product_division_id in (select business_unit_id from company_business_unit where company_id = " + utils.Int2String(ob.CustomerId) + ") and id = " + utils.Int2String(v.ProductId)).QueryRow(&products); err == orm.ErrNoRows {
@@ -732,6 +730,7 @@ func (c *DoController) Put() {
 				return
 			}
 		}(v)
+		v.CreatedBy = querydetail.CreatedBy
 	}
 
 	go func() {
