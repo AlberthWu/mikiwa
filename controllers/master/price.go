@@ -230,9 +230,9 @@ func (c *PriceController) Post() {
 		ProductCode:   products.ProductCode,
 		UomId:         uom_id,
 		UomCode:       uom_code,
-		DiscOne:       disc_one * -1,
-		DiscTwo:       disc_two * -1,
-		DiscTpr:       disc_tpr * -1,
+		DiscOne:       disc_one,
+		DiscTwo:       disc_two,
+		DiscTpr:       disc_tpr,
 		Ratio:         ratio,
 		NormalPrice:   normal_price,
 		Price:         price,
@@ -508,9 +508,9 @@ func (c *PriceController) Put() {
 	t_price.ProductCode = products.ProductCode
 	t_price.UomId = uom_id
 	t_price.UomCode = uom_code
-	t_price.DiscOne = disc_one * -1
-	t_price.DiscTwo = disc_two * -1
-	t_price.DiscTpr = disc_tpr * -1
+	t_price.DiscOne = disc_one
+	t_price.DiscTwo = disc_two
+	t_price.DiscTpr = disc_tpr
 	t_price.Ratio = ratio
 	t_price.NormalPrice = normal_price
 	t_price.Price = price

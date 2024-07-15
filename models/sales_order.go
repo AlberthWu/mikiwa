@@ -186,7 +186,11 @@ func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesO
 		deleteIds = append(deleteIds, utils.Int2String(detail.Id))
 	}
 
-	joinId = strings.Join(deleteIds, ",")
+	if len(deleteIds) == 0 {
+		joinId = "0"
+	} else {
+		joinId = strings.Join(deleteIds, ",")
+	}
 	_, err = o.Raw("update sales_order_detail set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and sales_order_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
 	if err != nil {
 		tx.Rollback()
@@ -413,6 +417,7 @@ func (t *SalesOrder) GetAllDetail(keyword, field_name, match_mode, value_name st
 
 func (c *SalesOrder) GetDetail(id, user_id int) (m []orm.Params) {
 	o := orm.NewOrm()
-	o.Raw("call sp_SalesOrder(null,null,null," + utils.Int2String(id) + ",null,null,null,0,null,null,0,''," + utils.Int2String(user_id) + ",'',null,null,null,null,null,null)").Values(&m)
+	// theDate date,dueDate date,updatedAt date,uId int,employeeIds varchar(15),outletIds varchar(15),customerIds varchar(15),plantId int,productIds varchar(15),statusIds varchar(15),in leadTime varchar(5), reportTypeId int,userId int,keyword varchar(255),in searchDetail int,in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int
+	o.Raw("call sp_SalesOrder(null,null,null," + utils.Int2String(id) + ",null,null,null,0,null,null,null,0," + utils.Int2String(user_id) + ",'',null,null,null,null,null,null)").Values(&m)
 	return m
 }

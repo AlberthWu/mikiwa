@@ -100,7 +100,7 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 		pathName = strings.Replace(pathName, "/", "%2F", -1)
 		newObjectNamePath := pathName + "%2F" + fileName
 
-		downloadURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "sampurnagroupapp.appspot.com", newObjectNamePath, fileName)
+		downloadURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "mpwdb-9c2d8.appspot.com", newObjectNamePath, fileName)
 
 		t_documents := models.Document{
 			ReferenceId: ReferenceId,

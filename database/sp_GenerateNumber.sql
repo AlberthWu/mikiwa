@@ -19,7 +19,6 @@ BEGIN
     if headerIdSet = "SalesOrder" THEN
 		set seqNo = ifnull((select max(seq_no)+1 from sales_order where year(issue_date) = year(issueDate) and outlet_id = outletId ),1);
 		set referenceNo  = concat(ifnull(outletId,"00"),'-SO/',Toroman,'-',date_format(issueDate,'%y'),'/',LPAD(seqNo,5,0)) ;
-	else if headerIdSet = "DeliveryOrder" THEN
     END IF;
 	select seqNo seqno, referenceNo `format`;
 END$$
