@@ -73,8 +73,8 @@ BEGIN
     SET limitSet = case when LimitVal is null then '' else concat(" limit ",offsetVal,",",limitVal)    end;
     set leadTimeSet = case when (leadTime is null or leadTime = '') then '' else concat(" and timestampdiff(day,date(now()),due_date) <= ",leadTime) end ;
 	if reportTypeId = 0 then
-		set uIdSet = case when (uId is null  or uId = 0) then '' else concat(" and t0.price_id in (",uId,")")   end;
-		if uId = null then
+		set uIdSet = case when (uId is null  or uId = 0) then '' else concat(" and t0.sales_order_id in (",uId,")")   end;
+       if uId = null then
 			select null id,null product_id,null product_code,null product_name,null qty,null uom_id,null uom_code,null ratio,null uom , null packaging_id,null packaging_code,null final_qty,null final_uom_id,null final_uom_code,null price,null disc1,null disc2,null disc_tpr,null nett_price,null total,null status_data
 				,'product_code,product_name,qty,uom_code,ratio,packaging_code,final_qty,final_uom_code,price,disc1,disc2,disc_tpr,nett_price,total,status_data' field_key
 				,'Kode,Nama,Qty,Sat,@,Sat,Total qty,Sat,Harga,Disc 1(%),Disc 2(%),Disc (Rp),Harga nett,Jumlah,Status Data' field_label

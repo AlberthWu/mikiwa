@@ -2,7 +2,7 @@ SET GLOBAL log_bin_trust_function_creators = 1;
 
 DROP PROCEDURE IF EXISTS sp_Price;
 DELIMITER $$
-CREATE PROCEDURE sp_Price(theDate date,updatedAt date,uId int,priceTypeId varchar(50),divisionIds varchar(7),typeIds varchar(7),statusIds varchar(5),reportGroupId int,reportTypeId int,userId int,keyword varchar(255),in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int ) 
+CREATE PROCEDURE sp_Price(theDate date,updatedAt date,uId int,priceTypeId varchar(50),divisionIds varchar(7),typeIds varchar(7),statusIds varchar(5),reportTypeId int,userId int,keyword varchar(255),in TheField varchar(8000),in MatchMode varchar(8000),in ValueName varchar(8000), in limitVal int, in offsetVal int ) 
 BEGIN
 	declare keywordSet varchar(8000);
     declare theDateSet varchar(100);
@@ -56,27 +56,30 @@ BEGIN
    
     SET limitSet = case when LimitVal is null then '' else concat(" limit ",offsetVal,",",limitVal)    end;
     -- by product
-    if reportGroupId = 1 then
+    -- if reportGroupId = 1 then
 		if reportTypeId = 0 then
 			set uIdSet = case when (uId is null  or uId = 0) then '' else concat(" and t0.price_id in (",uId,")")   end;
-			SET @s =  (concat ("select price_id,product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,normal_price,disc_one,disc_two,disc_tpr,price
-									,'product_code,product_name,uom_code,ratio,normal_price,disc_one_disc_two,disc_tpr,price,is_default' field_key
+			SET @s =  (concat ("select id,price_id,product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,normal_price,normal_price price,disc_one,disc_two,disc_tpr,nett_price
+									,'product_code,product_name,uom_code,ratio,price,disc_one_disc_two,disc_tpr,nett_price,is_default' field_key
 									,'Kode,Nama,Uom,Ratio,Harga,Disc 1(%),Disc 2(%),Disc tpr,Harga,Default' field_label
-									,'product_code,product_name,uom_code,ratio,normal_price,disc_one_disc_two,disc_tpr,price,is_default' field_export
+									,'product_code,product_name,uom_code,ratio,price,disc_one_disc_two,disc_tpr,nett_price,is_default' field_export
 									,'Kode,Nama,Uom,Ratio,Harga,Disc 1(%),Disc 2(%),Disc tpr,Harga,Default' field_export_label
 									,'normal_price,disc_one,disc_two,disc_tpr,price' field_int
 									,'' field_footer
 									,'' field_level 
 								from 
 									(select 
-										price_id,product_id,product_code,product_name,item_no,uom_id,uom_code,ratio,is_default,t1.normal_price,disc_one*-1 disc_one,disc_two*-1 disc_two,disc_tpr*-1 disc_tpr,
-										cast((t1.normal_price + ((t1.normal_price*disc_one)/100) + (t1.normal_price + (t1.normal_price*disc_one)/100)*disc_two/100) + disc_tpr as decimal(18,2)) price
+										t0.id,price_id,t0.product_id,product_code,product_name,item_no,t0.uom_id,uom_code,ratio,t0.is_default,case when t3.is_default is null then 0 else t1.normal_price end normal_price,
+                                        case when t3.is_default is null then 0 else disc_one end disc_one,case when t3.is_default is null then 0 else disc_two end disc_two,case when t3.is_default is null then 0 else disc_tpr end disc_tpr,
+										case when t3.is_default is null then 0 else cast((t1.normal_price + ((t1.normal_price*disc_one)/100) + (t1.normal_price + (t1.normal_price*disc_one)/100)*disc_two/100) + disc_tpr as decimal(18,2)) end nett_price
 									from 
 										price_product_uom t0
 									left join 
-										(select id,product_code,product_name,price normal_price from products) t1 on t1.id = t0.product_id
+										(select id,product_code,product_name,price normal_price,uom_id from products) t1 on t1.id = t0.product_id
 									left join 
 										(select id,uom_code from uoms)t2 on t2.id = t0.uom_id
+									left join
+										(select product_id,is_default,uom_id from product_uom where is_default = 1) t3 on t3.product_id = t0.product_id and t3.uom_id = t0.uom_id
 									where
 										deleted_at is null ",uIdSet,"
 									) x order by product_id,item_no;"));
@@ -104,7 +107,7 @@ BEGIN
 									where deleted_at is null ",theDateSet,uIdSet,userIdSet,statusIdSet,updatedAtSet,divisionIdSet,typeIdSet,keywordSet,"
 									) x where dr=1 ",ColumnSet,limitSet," ;"));
 		end if;
-	end if;
+	-- end if;
 	PREPARE stmt FROM @s;
 	EXECUTE stmt;
 	DEALLOCATE PREPARE stmt;
