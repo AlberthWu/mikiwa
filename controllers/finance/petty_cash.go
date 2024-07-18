@@ -446,7 +446,6 @@ func (c *PettyCashHController) Delete() {
 	sess := c.GetSession("profile")
 	if sess != nil {
 		user_name = sess.(map[string]interface{})["username"].(string)
-		user_id = sess.(map[string]interface{})["id"].(int)
 	}
 
 	// form_id = base.FormName("petty_cash")
@@ -548,6 +547,16 @@ func (c *PettyCashHController) ReOrderNum() {
 		user_name = sess.(map[string]interface{})["username"].(string)
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
+
+	form_id = base.FormName("reorder_petty_cash")
+	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
+	if !write_aut {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Reorder not authorize", map[string]interface{}{"message": "Please contact administrator"})
+		c.ServeJSON()
+		return
+	}
+
 	action_status, _ := c.GetInt("action_status")
 	account_id, _ := c.GetInt("account_id")
 	month_id, _ := c.GetInt("month_id")
@@ -598,7 +607,6 @@ func (c *PettyCashHController) ReOrderNumList() {
 	fmt.Print("Check :", user_id, form_id, user_name, "..")
 	sess := c.GetSession("profile")
 	if sess != nil {
-		user_name = sess.(map[string]interface{})["username"].(string)
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
 

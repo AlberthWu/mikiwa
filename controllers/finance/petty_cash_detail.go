@@ -342,7 +342,7 @@ func (c *PettyCashController) Delete() {
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 
 	var querydata models.PettyCash
-	models.PettyCashs().Filter("voucher_id", id).One(&querydata)
+	err = models.PettyCashs().Filter("voucher_id", id).One(&querydata)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(401)
 		utils.ReturnHTTPError(&c.Controller, 401, "Voucher id unregistered/Illegal data")
@@ -383,9 +383,7 @@ func (c *PettyCashController) Delete() {
 	json.Unmarshal(body, &ub)
 	var joinId []string
 	ids := strings.Split(ub.Id, ",")
-	for _, st := range ids {
-		joinId = append(joinId, st)
-	}
+	joinId = append(joinId, ids...)
 
 	num, err := models.PettyCashs().Filter("deleted_at__isnull", true).Filter("voucher_id", id).Filter("id__in", joinId).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
 	code, message := base.DecodeErr(err)
