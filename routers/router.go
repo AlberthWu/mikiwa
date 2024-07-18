@@ -94,14 +94,10 @@ func init() {
 
 	// finance
 	// petty cash
-	beego.Router("/v1/finance/pettycash", &finance.PettyCashHController{}, "post:Post;get:GetAll")
-	beego.Router("/v1/finance/pettycash/:id", &finance.PettyCashHController{}, "put:Put;get:GetOne;delete:Delete")
-	beego.Router("/v1/finance/pettycash/list/:id", &finance.PettyCashHController{}, "get:GetAllList")
-	beego.Router("/v1/finance/pettycash/reorder", &finance.PettyCashHController{}, "get:ReOrderNumList;post:ReOrderNum")
-
-	beego.Router("/v1/finance/pettycash/detail/checkdelete/:id", &finance.PettyCashController{}, "get:CheckDelete")
-	beego.Router("/v1/finance/pettycash/detail", &finance.PettyCashController{}, "post:Post")
-	beego.Router("/v1/finance/pettycash/detail/:id", &finance.PettyCashController{}, "put:Put;delete:Delete")
+	beego.Router("/v2/finance/pettycash", &finance.PettyCashV2Controller{}, "post:Post;get:GetAll")
+	beego.Router("/v2/finance/pettycash/:id", &finance.PettyCashV2Controller{}, "put:Put;get:GetOne;delete:Delete")
+	beego.Router("/v2/finance/pettycash/reorder", &finance.PettyCashV2Controller{}, "get:ReOrderNumList;post:ReOrderNum")
+	// beego.Router("/v1/finance/pettycash/list/:id", &finance.PettyCashV2Controller{}, "get:GetAllList")
 
 	// report
 	beego.Router("/v1/finance/report/pettycash/summary/1", &finance.FinanceReportController{}, "get:ReportPettyCashSummaryDaily")

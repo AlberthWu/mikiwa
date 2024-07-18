@@ -1,7 +1,9 @@
 package models
 
 import (
+	"fmt"
 	"mikiwa/utils"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -137,6 +139,86 @@ func (t *PettyCash) Update(fields ...string) error {
 	o := orm.NewOrm()
 	if _, err := o.Update(t, fields...); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (t *PettyCashHeader) InsertWithDetail(m PettyCashHeader, d []PettyCash) (data *PettyCashHeader, err error) {
+	o := orm.NewOrm()
+
+	if _, err = o.Insert(&m); err != nil {
+		return nil, err
+	}
+
+	for i := range d {
+		d[i].VoucherId = m.Id
+	}
+
+	_, err = o.InsertMulti(len(d), d)
+	if err != nil {
+		o.Raw("update petty_cash set deleted_at = now(),deleted_by = 'Failed' where id = " + utils.Int2String(m.Id)).Exec()
+		return nil, err
+	}
+
+	return &m, nil
+}
+
+func (t *PettyCashHeader) UpdateWithDetail(m PettyCashHeader, data_post, data_put []PettyCash, user_name string) error {
+	o := orm.NewOrm()
+	tx, err := o.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %v", err)
+	}
+
+	if _, err := tx.Update(&m); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to update order: %v", err)
+	}
+
+	// Update existing PettyCashDetail (Details) and delete
+	var deleteIds []string
+	var joinId string
+	for _, detail := range data_put {
+		if detail.Id != 0 {
+			if _, err := tx.Update(&detail); err != nil {
+				tx.Rollback()
+				return fmt.Errorf("failed to update detail: %v", err)
+			}
+		}
+
+		deleteIds = append(deleteIds, utils.Int2String(detail.Id))
+	}
+
+	if len(deleteIds) == 0 {
+		joinId = "0"
+	} else {
+		joinId = strings.Join(deleteIds, ",")
+	}
+	_, err = o.Raw("update petty_cash set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and voucher_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to delete existing details: %v", err)
+	}
+
+	// Insert new PettyCashDetail (Details)
+	for i := range data_post {
+		data_post[i].VoucherId = m.Id
+	}
+
+	if len(data_post) > 0 {
+		_, err = o.InsertMulti(len(data_post), data_post)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to insert new details: %v", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %v after commit failed: %v", rbErr, err)
+		}
+		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil
 }
