@@ -55,7 +55,8 @@ BEGIN
     
     
 	SET @s =  (concat ("select * from (
-						select t0.id,t0.parent_id,code,name,email,phone,fax,npwp,npwp_name,npwp_address,terms,credit,address,concat(t1.city_name,', ',t2.district_name,', ', t3.state_name) teritory,zip,city_id,t1.city_name,bank_id,t4.bank_name,bank_no,bank_account_name,bank_branch,is_cash,is_po,is_tax,is_receipt,status
+						select t0.id,t0.parent_id,code,name,email,phone,fax,npwp,npwp_name,npwp_address,terms,credit,address,concat(t1.city_name,', ',t2.district_name,', ', t3.state_name) teritory,zip,city_id,t1.city_name,bank_id,t4.bank_name,bank_no,bank_account_name,bank_branch,is_cash,is_po,is_tax,is_receipt,status,
+							min_packaging
 						from
 							companies t0
 						left join

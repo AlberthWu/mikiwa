@@ -24,10 +24,11 @@ func (c *CompanyController) Prepare() {
 func (c *CompanyController) Post() {
 	var user_id, form_id int
 	var err error
-
+	var user_name string
 	sess := c.GetSession("profile")
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
+		user_name = sess.(map[string]interface{})["username"].(string)
 	}
 
 	form_id = base.FormName(form_customer)
@@ -63,6 +64,7 @@ func (c *CompanyController) Post() {
 	company_type := strings.TrimSpace(c.GetString("company_type"))
 	business_unit := strings.TrimSpace(c.GetString("business_unit"))
 	bank_id, _ := c.GetInt("bank_id")
+	min_packaging, _ := c.GetInt("min_packaging")
 	bank_no := strings.TrimSpace(c.GetString("bank_no"))
 	bank_account_name := strings.TrimSpace(c.GetString("bank_account_name"))
 	bank_branch := strings.TrimSpace(c.GetString("bank_branch"))
@@ -178,6 +180,9 @@ func (c *CompanyController) Post() {
 		IsReceipt:       isReceipt,
 		PriceMethod:     1,
 		Status:          status,
+		MinPackaging:    min_packaging,
+		CreatedBy:       user_name,
+		UpdatedBy:       user_name,
 	}
 
 	d, err_ := t_company.Insert(t_company)
@@ -216,11 +221,13 @@ func (c *CompanyController) Post() {
 
 func (c *CompanyController) Put() {
 	var user_id, form_id int
-	var err error
 	var deletedAt string
+	var err error
+	var user_name string
 	sess := c.GetSession("profile")
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
+		user_name = sess.(map[string]interface{})["username"].(string)
 	}
 
 	form_id = base.FormName(form_customer)
@@ -279,6 +286,7 @@ func (c *CompanyController) Put() {
 	company_type := strings.TrimSpace(c.GetString("company_type"))
 	business_unit := strings.TrimSpace(c.GetString("business_unit"))
 	bank_id, _ := c.GetInt("bank_id")
+	min_packaging, _ := c.GetInt("min_packaging")
 	bank_no := strings.TrimSpace(c.GetString("bank_no"))
 	bank_account_name := strings.TrimSpace(c.GetString("bank_account_name"))
 	bank_branch := strings.TrimSpace(c.GetString("bank_branch"))
@@ -393,6 +401,9 @@ func (c *CompanyController) Put() {
 	t_company.IsReceipt = isReceipt
 	t_company.PriceMethod = 1
 	t_company.Status = status
+	t_company.MinPackaging = min_packaging
+	t_company.CreatedBy = querydata.CreatedBy
+	t_company.UpdatedBy = user_name
 	err_ := t_company.Update()
 
 	errcode, errmessage = base.DecodeErr(err_)
@@ -431,9 +442,11 @@ func (c *CompanyController) Delete() {
 	var user_id, form_id int
 	var err error
 	var deletedAt string
+	var user_name string
 	sess := c.GetSession("profile")
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
+		user_name = sess.(map[string]interface{})["username"].(string)
 	}
 	form_id = base.FormName(form_product)
 	delete_aut := models.CheckPrivileges(user_id, form_id, base.Delete)
@@ -466,7 +479,7 @@ func (c *CompanyController) Delete() {
 		c.ServeJSON()
 		return
 	}
-	models.Companies().Filter("id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate()})
+	models.Companies().Filter("id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
 
 	utils.ReturnHTTPError(&c.Controller, 200, "soft delete success")
 	c.ServeJSON()

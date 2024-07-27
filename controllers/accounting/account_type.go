@@ -64,7 +64,7 @@ func (c *AccountTypeController) Post() {
 		return
 	}
 
-	if exist := models.GlAccountTypes().Filter("deleted_at__isnull", true).Filter("account_code", account_code).Exist(); exist == true {
+	if exist := models.GlAccountTypes().Filter("deleted_at__isnull", true).Filter("account_code", account_code).Exist(); exist {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("account_code : '%v' has been REGISTERED", account_code))
 		c.ServeJSON()
@@ -162,7 +162,7 @@ func (c *AccountTypeController) Put() {
 		return
 	}
 
-	if exist := models.GlAccountTypes().Exclude("id", id).Filter("deleted_at__isnull", true).Filter("account_code", account_code).Exist(); exist == true {
+	if exist := models.GlAccountTypes().Exclude("id", id).Filter("deleted_at__isnull", true).Filter("account_code", account_code).Exist(); exist {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("account_code : '%v' has been REGISTERED", account_code))
 		c.ServeJSON()
