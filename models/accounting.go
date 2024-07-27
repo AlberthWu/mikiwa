@@ -42,6 +42,7 @@ type (
 		ExpiredDate     *time.Time `json:"expired_date" orm:"column(expired_date);type(date);null"`
 		StatusId        int8       `json:"status_id" orm:"column(status_id);default(0)"`
 		JournalPosition string     `json:"journal_position" orm:"column(journal_position)"`
+		IsHeader        int8       `json:"is_header" orm:"column(is_header);default(0)"`
 		CreatedAt       time.Time  `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
 		UpdatedAt       time.Time  `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
 		DeletedAt       time.Time  `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
@@ -128,6 +129,7 @@ type (
 		StatusId        int8    `json:"status_id"`
 		JournalPosition string  `json:"journal_position"`
 		StatusData      string  `json:"status_data"`
+		IsHeader        int8    `json:"is_header"`
 	}
 
 	CoaListRtnJson struct {
@@ -151,6 +153,7 @@ type (
 		StatusId        int8               `json:"status_id"`
 		JournalPosition string             `json:"journal_position"`
 		StatusData      string             `json:"status_data"`
+		IsHeader        int8               `json:"is_header"`
 	}
 )
 
@@ -229,19 +232,20 @@ func (t *CharOfAccount) GetById(id int) (m *CoaRtn, err error) {
 		CodeIn:          detail.CodeIn,
 		StatusId:        detail.StatusId,
 		JournalPosition: detail.JournalPosition,
+		IsHeader:        detail.IsHeader,
 	}
 
 	return m, err
 }
 
-func (t *CharOfAccount) GetAll(keyword, field_name, match_mode, value_name string, p, size, parent_level_no, level_no, account_type_id, company_id, sales_type_id int, issue_date, updated_at *string) (u utils.Page, err error) {
+func (t *CharOfAccount) GetAll(keyword, field_name, match_mode, value_name string, p, size, parent_level_no, level_no, account_type_id, company_id, sales_type_id, user_id int, issue_date, updated_at *string) (u utils.Page, err error) {
 
 	o := orm.NewOrm()
 	var c int
 	var querydata []CoaRtnJson
 
-	o.Raw("call sp_ChartOfAccountCount(?,?,"+utils.Int2String(parent_level_no)+","+utils.Int2String(level_no)+","+utils.Int2String(account_type_id)+","+utils.Int2String(company_id)+","+utils.Int2String(sales_type_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &updated_at).QueryRow(&c)
-	d, err := o.Raw("call sp_ChartOfAccount(?,?,"+utils.Int2String(parent_level_no)+","+utils.Int2String(level_no)+","+utils.Int2String(account_type_id)+","+utils.Int2String(company_id)+","+utils.Int2String(sales_type_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+","+utils.Int2String((p-1)*size)+")", &issue_date, &updated_at).QueryRows(&querydata)
+	o.Raw("call sp_ChartOfAccountCount(?,?,"+utils.Int2String(parent_level_no)+","+utils.Int2String(level_no)+","+utils.Int2String(account_type_id)+","+utils.Int2String(company_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &issue_date, &updated_at).QueryRow(&c)
+	d, err := o.Raw("call sp_ChartOfAccount(?,?,"+utils.Int2String(parent_level_no)+","+utils.Int2String(level_no)+","+utils.Int2String(account_type_id)+","+utils.Int2String(company_id)+","+utils.Int2String(sales_type_id)+","+utils.Int2String(user_id)+",'"+keyword+"','"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+","+utils.Int2String((p-1)*size)+")", &issue_date, &updated_at).QueryRows(&querydata)
 	var detailrtn []CoaRtn
 	for _, val := range querydata {
 		var companyrtn CompanyListRtnJson
@@ -268,6 +272,7 @@ func (t *CharOfAccount) GetAll(keyword, field_name, match_mode, value_name strin
 			StatusId:        val.StatusId,
 			JournalPosition: val.JournalPosition,
 			StatusData:      val.StatusData,
+			IsHeader:        val.IsHeader,
 		})
 	}
 
@@ -277,9 +282,9 @@ func (t *CharOfAccount) GetAll(keyword, field_name, match_mode, value_name strin
 	return utils.Pagination(int(c), p, size, detailrtn), err
 }
 
-func (t *CharOfAccount) GetAllLimit(keyword string, parent_level_no, level_no, account_type_id, company_id, sales_type_id int) (m []CoaRtnJson, err error) {
+func (t *CharOfAccount) GetAllLimit(keyword string, parent_level_no, level_no, account_type_id, company_id, sales_type_id, user_id int) (m []CoaRtnJson, err error) {
 	o := orm.NewOrm()
-	d, err := o.Raw("call sp_ChartOfAccount(now(),null," + utils.Int2String(parent_level_no) + "," + utils.Int2String(level_no) + "," + utils.Int2String(account_type_id) + "," + utils.Int2String(company_id) + "," + utils.Int2String(sales_type_id) + ",'" + keyword + "',null,null,null,null,null)").QueryRows(&m)
+	d, err := o.Raw("call sp_ChartOfAccount(now(),null," + utils.Int2String(parent_level_no) + "," + utils.Int2String(level_no) + "," + utils.Int2String(account_type_id) + "," + utils.Int2String(company_id) + "," + utils.Int2String(sales_type_id) + "," + utils.Int2String(user_id) + ",'" + keyword + "',null,null,null,null,null)").QueryRows(&m)
 
 	if d == 0 && err == nil {
 		err = orm.ErrNoRows
@@ -287,10 +292,10 @@ func (t *CharOfAccount) GetAllLimit(keyword string, parent_level_no, level_no, a
 	return m, err
 }
 
-func (t *CharOfAccount) GetAllLimitChild(issue_date, keyword, component string, company_id, account_type_id, sales_type_id int) (m []CoaRtnJson, err error) {
+func (t *CharOfAccount) GetAllLimitChild(issue_date, keyword, component string, company_id, account_type_id, sales_type_id, user_id int) (m []CoaRtnJson, err error) {
 	o := orm.NewOrm()
 	var querydata []CoaRtnJson
-	d, err := o.Raw("call sp_ChartOfAccountChild('" + issue_date + "'," + utils.Int2String(company_id) + "," + utils.Int2String(account_type_id) + ",0," + utils.Int2String(sales_type_id) + ",'" + component + "','" + keyword + "',null,null,null,null,null)").QueryRows(&querydata)
+	d, err := o.Raw("call sp_ChartOfAccountChild('" + issue_date + "'," + utils.Int2String(company_id) + "," + utils.Int2String(account_type_id) + ",0," + utils.Int2String(sales_type_id) + ",'" + component + "'," + utils.Int2String(user_id) + ",'" + keyword + "',null,null,null,null,null)").QueryRows(&querydata)
 	if d == 0 && err == nil {
 		err = orm.ErrNoRows
 	}

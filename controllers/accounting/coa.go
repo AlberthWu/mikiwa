@@ -54,6 +54,7 @@ func (c *CoaController) Post() {
 	code_in := strings.TrimSpace(c.GetString("code_in"))
 	code_out := strings.TrimSpace(c.GetString("code_out"))
 	status_id, _ := c.GetInt("status_id")
+	is_header, _ := c.GetInt8("is_header")
 	// sales_type_id := strings.TrimSpace(c.GetString("sales_type_id"))
 
 	valid := validation.Validation{}
@@ -207,6 +208,7 @@ func (c *CoaController) Post() {
 		CodeOut:         code_out,
 		StatusId:        int8(status_id),
 		JournalPosition: accounttype.JournalPosition,
+		IsHeader:        is_header,
 		CreatedBy:       user_name,
 	}
 
@@ -257,6 +259,7 @@ func (c *CoaController) Put() {
 	code_in := strings.TrimSpace(c.GetString("code_in"))
 	code_out := strings.TrimSpace(c.GetString("code_out"))
 	status_id, _ := c.GetInt("status_id")
+	is_header, _ := c.GetInt8("is_header")
 	// sales_type_id := strings.TrimSpace(c.GetString("sales_type_id"))
 
 	var querydata models.CharOfAccount
@@ -433,6 +436,7 @@ func (c *CoaController) Put() {
 	t_coa.CodeOut = code_out
 	t_coa.StatusId = int8(status_id)
 	t_coa.JournalPosition = accounttype.JournalPosition
+	t_coa.IsHeader = is_header
 	t_coa.CreatedBy = querydata.CreatedBy
 	t_coa.UpdatedBy = user_name
 	err_ := t_coa.Update()
@@ -520,6 +524,12 @@ func (c *CoaController) GetOne() {
 }
 
 func (c *CoaController) GetAll() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	user_id = 1
 	var issuedate, updatedat *string
 
 	currentPage, _ := c.GetInt("page")
@@ -554,7 +564,7 @@ func (c *CoaController) GetAll() {
 	} else {
 		updatedat = &updated_at
 	}
-	d, err := t_coa.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, parent_level_no, level_no, account_type_id, company_id, sales_type_id, issuedate, updatedat)
+	d, err := t_coa.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, parent_level_no, level_no, account_type_id, company_id, sales_type_id, user_id, issuedate, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -570,14 +580,21 @@ func (c *CoaController) GetAll() {
 }
 
 func (c *CoaController) GetAllLimit() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	user_id = 1
 	keyword := strings.TrimSpace(c.GetString("keyword"))
 	account_type_id, _ := c.GetInt("account_type_id")
 	level_no, _ := c.GetInt("level_no")
 	parent_level_no, _ := c.GetInt("parent_level_no")
-	company_id, _ := c.GetInt("company_id")
 	sales_type_id, _ := c.GetInt("sales_type_id")
 
-	d, err := t_coa.GetAllLimit(keyword, parent_level_no, level_no, account_type_id, company_id, sales_type_id)
+	company_id := 1
+
+	d, err := t_coa.GetAllLimit(keyword, parent_level_no, level_no, account_type_id, company_id, sales_type_id, user_id)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -593,28 +610,24 @@ func (c *CoaController) GetAllLimit() {
 }
 
 func (c *CoaController) GetAllLimiChildByCompany() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	user_id = 1
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	fmt.Println(id)
 	issue_date := strings.TrimSpace(c.GetString("issue_date"))
 	keyword := strings.TrimSpace(c.GetString("keyword"))
 	account_type_id, _ := c.GetInt("account_type_id")
 	sales_type_id, _ := c.GetInt("sales_type_id")
 
-	valid := validation.Validation{}
-	valid.Required(issue_date, "issue_date").Message("is required")
-	valid.Required(id, "id").Message("Company id is required")
-
-	if valid.HasErrors() {
-		out := make([]utils.ApiError, len(valid.Errors))
-		for i, err := range valid.Errors {
-			out[i] = utils.ApiError{Param: err.Key, Message: err.Message}
-		}
-		c.Ctx.ResponseWriter.WriteHeader(400)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 400, "Invalid input field", out)
-		c.ServeJSON()
-		return
+	if issue_date == "" {
+		issue_date = utils.GetSvrDate().Format("2006-01-02")
 	}
 
-	d, err := t_coa.GetAllLimitChild(issue_date, keyword, "", id, account_type_id, sales_type_id)
+	d, err := t_coa.GetAllLimitChild(issue_date, keyword, "", 1, account_type_id, sales_type_id, user_id)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200
@@ -630,28 +643,25 @@ func (c *CoaController) GetAllLimiChildByCompany() {
 }
 
 func (c *CoaController) GetAllLimiChildByCompanyAssets() {
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	user_id = 1
+
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	fmt.Println(id)
 	issue_date := strings.TrimSpace(c.GetString("issue_date"))
 	keyword := strings.TrimSpace(c.GetString("keyword"))
 	sales_type_id, _ := c.GetInt("sales_type_id")
 	account_type_id, _ := c.GetInt("account_type_id")
 
-	valid := validation.Validation{}
-	valid.Required(issue_date, "issue_date").Message("is required")
-	valid.Required(id, "id").Message("Company id is required")
-
-	if valid.HasErrors() {
-		out := make([]utils.ApiError, len(valid.Errors))
-		for i, err := range valid.Errors {
-			out[i] = utils.ApiError{Param: err.Key, Message: err.Message}
-		}
-		c.Ctx.ResponseWriter.WriteHeader(400)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 400, "Invalid input field", out)
-		c.ServeJSON()
-		return
+	if issue_date == "" {
+		issue_date = utils.GetSvrDate().Format("2006-01-02")
 	}
 
-	d, err := t_coa.GetAllLimitChild(issue_date, keyword, "Assets", id, account_type_id, sales_type_id)
+	d, err := t_coa.GetAllLimitChild(issue_date, keyword, "Assets", 1, account_type_id, sales_type_id, user_id)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		code = 200

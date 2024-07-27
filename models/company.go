@@ -39,9 +39,13 @@ type (
 		BankNo          string          `json:"bank_no" orm:"column(bank_no)"`
 		BankAccountName string          `json:"bank_account_name" orm:"column(bank_account_name)"`
 		BankBranch      string          `json:"bank_branch" orm:"column(bank_branch)"`
+		MinPackaging    int             `json:"min_packaging" orm:"column(min_packaging)"`
 		CreatedAt       time.Time       `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
 		UpdatedAt       time.Time       `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
 		DeletedAt       time.Time       `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`
+		CreatedBy       string          `json:"created_by" orm:"column(created_by)"`
+		UpdatedBy       string          `json:"updated_by" orm:"column(updated_by)"`
+		DeletedBy       string          `json:"deleted_by" orm:"column(deleted_by)"`
 		CompanyTypes    []*CompanyTypes `json:"-" orm:"reverse(many);rel_through(mikiwa/models.CompanyCompanyType)"`
 		BusinessUnit    []*BusinessUnit `json:"-" orm:"reverse(many);rel_through(mikiwa/models.CompanyBusinessUnit)"`
 		Price           []*Price        `json:"-" orm:"rel(m2m);rel_through(mikiwa/models.PriceCompany)"`
@@ -172,6 +176,7 @@ type (
 		BankNo          string         `json:"bank_no"`
 		BankAccountName string         `json:"bank_account_name"`
 		BankBranch      string         `json:"bank_branch"`
+		MinPackaging    int            `json:"min_packaging"`
 		Plant           []PlantRtnJson `json:"plant"`
 		CompanyType     []CompanyTy    `json:"company_type"`
 		BusinessUnit    []CompanyBu    `json:"business_unit"`
@@ -205,6 +210,7 @@ type (
 		BankNo          string         `json:"bank_no"`
 		BankAccountName string         `json:"bank_account_name"`
 		BankBranch      string         `json:"bank_branch"`
+		MinPackaging    int            `json:"min_packaging"`
 		Plant           []PlantRtnJson `json:"plant"`
 		CompanyType     []CompanyTy    `json:"company_type"`
 		BusinessUnit    []CompanyBu    `json:"business_unit"`
@@ -322,6 +328,7 @@ func (t *Company) GetById(id, user_id int) (m *CompanyDetailReturn, err error) {
 		BankNo:          companies.BankNo,
 		BankAccountName: companies.BankAccountName,
 		BankBranch:      companies.BankBranch,
+		MinPackaging:    companies.MinPackaging,
 		Plant:           plantrtn,
 		CompanyType:     companyty,
 		BusinessUnit:    blist}
@@ -376,6 +383,7 @@ func (t *Company) GetAll(keyword, field_name, match_mode, value_name string, p, 
 			BankNo:          val.BankNo,
 			BankAccountName: val.BankAccountName,
 			BankBranch:      val.BankBranch,
+			MinPackaging:    val.MinPackaging,
 			Plant:           olist,
 			CompanyType:     clist,
 			BusinessUnit:    blist,

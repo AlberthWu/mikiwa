@@ -47,6 +47,18 @@ type (
 		Memo        string  `json:"memo"`
 		CreatedBy   string  `json:"created_by"`
 	}
+
+	coaUserRtn struct {
+		Id          int    `json:"id"`
+		CodeCoa     string `json:"code_coa"`
+		NameCoa     string `json:"name_coa"`
+		CodeIn      string `json:"code_in"`
+		CodeOut     string `json:"code_out"`
+		StatusId    int8   `json:"status_id"`
+		CompanyId   int    `json:"company_id"`
+		CompanyCode string `json:"company_code"`
+		UserId      int    `json:"user_id"`
+	}
 )
 
 func (c *PettyCashV2Controller) Post() {
@@ -57,17 +69,17 @@ func (c *PettyCashV2Controller) Post() {
 	var folderName string = "petty_cash"
 	var num, voucher_seq_no int = 0, 0
 	var status_id int8 = 0
-	var reference_no, voucher_code, period string
+	var reference_no, voucher_code, period, batch_no string
 	sess := c.GetSession("profile")
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 		user_name = sess.(map[string]interface{})["username"].(string)
 	}
-
+	user_id = 1
 	form_id = base.FormName(form_petty_cash)
 	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
 	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
-	write_aut = true
+
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorize", map[string]interface{}{"message": "Please contact administrator"})
@@ -112,11 +124,11 @@ func (c *PettyCashV2Controller) Post() {
 		return
 	}
 
-	var coa models.CharOfAccount
+	var coa coaUserRtn
 	if !aut_aut {
-		err = o.Raw("select * from chart_of_accounts where deleted_at is null and account_type_id = 1  and id not in (select parent_id from chart_of_accounts where deleted_at is null) and id in (select account_id from sys_user_account where user_id = " + utils.Int2String(user_id) + "  ) and is_header = 1 and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code,user_id from chart_of_accounts t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and t0.id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
 	} else {
-		err = o.Raw("select * from chart_of_accounts where deleted_at is null and account_type_id = 1  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code," + utils.Int2String(user_id) + " user_id from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
 	}
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(401)
@@ -132,14 +144,21 @@ func (c *PettyCashV2Controller) Post() {
 		return
 	}
 
-	if coa.StatusId == 0 {
+	if coa.UserId != user_id {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", coa.CodeCoa))
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your access right", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
 
-	var coaDetail models.CharOfAccount
+	if coa.StatusId == 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error account '%v' has been set as INACTIVE", coa.CodeCoa))
+		c.ServeJSON()
+		return
+	}
+
+	var coaDetail coaUserRtn
 	var debet, credit float64
 	wg = new(sync.WaitGroup)
 	var mutex sync.Mutex
@@ -152,9 +171,9 @@ func (c *PettyCashV2Controller) Post() {
 			mutex.Lock()
 			defer mutex.Unlock()
 			if !aut_aut {
-				err = o.Raw("select * from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null) and id in (select account_id from sys_user_account where user_id = " + utils.Int2String(user_id) + "  ) and id = " + utils.Int2String(v.AccountId)).QueryRow(&coaDetail)
+				err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,user_id from chart_of_accounts  t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null) and  t0.id = " + utils.Int2String(v.AccountId)).QueryRow(&coaDetail)
 			} else {
-				err = o.Raw("select * from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coaDetail)
+				err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id," + utils.Int2String(user_id) + " user_id from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and id = " + utils.Int2String(v.AccountId)).QueryRow(&coaDetail)
 			}
 			if err == orm.ErrNoRows {
 				resultChan <- utils.ResultChan{Id: v.AccountId, Data: "Invalid detail id", Message: "chart of account unregistered/Illegal data"}
@@ -166,14 +185,17 @@ func (c *PettyCashV2Controller) Post() {
 				return
 			}
 
+			if coaDetail.UserId != user_id {
+				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' is not your access right", coaDetail.CodeCoa)}
+				return
+			}
+
 			if coaDetail.StatusId == 0 {
 				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' has been set as INACTIVE", coaDetail.CodeCoa)}
 				return
 			}
 
 		}(v)
-		v.AccountCode = coaDetail.CodeCoa
-		v.AccountName = coaDetail.NameCoa
 		debet += v.Debet
 		credit += v.Credit
 	}
@@ -217,6 +239,7 @@ func (c *PettyCashV2Controller) Post() {
 
 	num, reference_no = models.GeneratePettyCashNumber(thedate, 0, ob.AccountId, "", voucher_code, ob.TransactionType)
 	period = string(thedate.Format("20060102"))
+	batch_no = string(thedate.Format("200601")) + reference_no
 
 	if ob.VoucherNo == "" {
 		ob.VoucherNo = reference_no
@@ -225,9 +248,6 @@ func (c *PettyCashV2Controller) Post() {
 
 	t_pettycashh = models.PettyCashHeader{
 		IssueDate:       thedate,
-		CompanyId:       0,
-		CompanyCode:     "",
-		CompanyName:     "",
 		AccountId:       ob.AccountId,
 		AccountCode:     coa.CodeCoa,
 		AccountName:     coa.NameCoa,
@@ -236,7 +256,7 @@ func (c *PettyCashV2Controller) Post() {
 		VoucherNo:       ob.VoucherNo,
 		Debet:           debet,
 		Credit:          credit,
-		BatchNo:         "",
+		BatchNo:         batch_no,
 		TransactionType: ob.TransactionType,
 		Period:          utils.String2Int(period),
 		Pic:             ob.Pic,
@@ -257,9 +277,6 @@ func (c *PettyCashV2Controller) Post() {
 				inputDetail = append(inputDetail, models.PettyCash{
 					IssueDate:         thedate,
 					VoucherId:         t_pettycashh.Id,
-					CompanyId:         0,
-					CompanyCode:       "",
-					CompanyName:       "",
 					AccountIdHeader:   ob.AccountId,
 					AccountCodeHeader: coa.CodeCoa,
 					AccountNameHeader: coa.NameCoa,
@@ -320,18 +337,18 @@ func (c *PettyCashV2Controller) Put() {
 	var user_name string
 	var err error
 	var folderName string = "petty_cash"
-	var num, voucher_seq_no int = 0, 0
-	var reference_no, voucher_code, period string
+	var num int = 0
+	var reference_no, voucher_code, period, deletedatData, batch_no string
 	sess := c.GetSession("profile")
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 		user_name = sess.(map[string]interface{})["username"].(string)
 	}
-
+	user_id = 1
 	form_id = base.FormName(form_petty_cash)
 	put_aut := models.CheckPrivileges(user_id, form_id, base.Update)
 	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
-	put_aut = true
+
 	if !put_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Put not authorize", map[string]interface{}{"message": "Please contact administrator"})
@@ -371,6 +388,14 @@ func (c *PettyCashV2Controller) Put() {
 		return
 	}
 
+	deletedatData = querydata.DeletedAt.Format("2006-01-02")
+	if deletedatData != "0001-01-01" {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v' has been deleted", querydata.VoucherNo))
+		c.ServeJSON()
+		return
+	}
+
 	thedate, errDate := time.Parse("2006-01-02", ob.IssueDate)
 	if errDate != nil {
 		c.Ctx.ResponseWriter.WriteHeader(401)
@@ -401,8 +426,33 @@ func (c *PettyCashV2Controller) Put() {
 		return
 	}
 
+	if !aut_aut {
+		if querydata.LoanId > 0 {
+			c.Ctx.ResponseWriter.WriteHeader(402)
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by loan '" + querydata.LoanReferenceNo + "'"})
+			c.ServeJSON()
+			return
+		}
+
+		if querydata.ArId > 0 {
+			c.Ctx.ResponseWriter.WriteHeader(402)
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ar '" + querydata.ArReferenceNo + "'"})
+			c.ServeJSON()
+			return
+		}
+
+		if querydata.ApId > 0 {
+			c.Ctx.ResponseWriter.WriteHeader(402)
+			utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ap '" + querydata.ApReferenceNo + "'"})
+			c.ServeJSON()
+			return
+		}
+	}
 	ob.TransactionType = querydata.TransactionType
 	ob.AccountId = querydata.AccountId
+	if querydata.VoucherSeqNo != 0 {
+		ob.VoucherNo = querydata.VoucherNo
+	}
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")
 	valid.Required(ob.AccountId, "account_id").Message("Is required")
@@ -427,14 +477,13 @@ func (c *PettyCashV2Controller) Put() {
 		return
 	}
 
-	// // no need to check has been set
-	var coa models.CharOfAccount
-	// if !aut_aut {
-	// 	err = o.Raw("select * from chart_of_accounts where deleted_at is null and account_type_id = 1  and id not in (select parent_id from chart_of_accounts where deleted_at is null) and id in (select account_id from sys_user_account where user_id = " + utils.Int2String(user_id) + "  ) and is_header = 1 and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
-	// } else {
-	// 	err = o.Raw("select * from chart_of_accounts where deleted_at is null and account_type_id = 1  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
-	// }
-	err = models.ChartOfAccounts().Filter("deleted_at__isnull", true).Filter("id", ob.AccountId).One(coa)
+	var coa coaUserRtn
+	if !aut_aut {
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code,user_id from chart_of_accounts t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and t0.id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
+	} else {
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code," + utils.Int2String(user_id) + " user_id from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
+	}
+	// err = models.ChartOfAccounts().Filter("deleted_at__isnull", true).Filter("id", ob.AccountId).One(coa)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(401)
 		utils.ReturnHTTPError(&c.Controller, 401, "Chart of accounts unregistered/Illegal data")
@@ -449,15 +498,21 @@ func (c *PettyCashV2Controller) Put() {
 		return
 	}
 
+	if coa.UserId != user_id {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your access right", coa.CodeCoa))
+		c.ServeJSON()
+		return
+	}
+
 	if coa.StatusId == 0 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
-	// // no need to check has been set
 
-	var coaDetail models.CharOfAccount
+	var coaDetail coaUserRtn
 	var querydetail models.PettyCash
 	var debet, credit float64
 	wg = new(sync.WaitGroup)
@@ -465,7 +520,7 @@ func (c *PettyCashV2Controller) Put() {
 	resultChan := make(chan utils.ResultChan, len(ob.Detail))
 	var queryResults []utils.ResultChan
 	wg.Add(len(ob.Detail))
-	for _, v := range ob.Detail {
+	for _, k := range ob.Detail {
 		go func(v InputDetailPettyCash) {
 			defer wg.Done()
 			mutex.Lock()
@@ -481,11 +536,10 @@ func (c *PettyCashV2Controller) Put() {
 					return
 				}
 			}
-
 			if !aut_aut {
-				err = o.Raw("select * from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null) and id in (select account_id from sys_user_account where user_id = " + utils.Int2String(user_id) + "  ) and id = " + utils.Int2String(v.AccountId)).QueryRow(&coaDetail)
+				err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,user_id from chart_of_accounts  t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null) and  t0.id = " + utils.Int2String(v.AccountId)).QueryRow(&coaDetail)
 			} else {
-				err = o.Raw("select * from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coaDetail)
+				err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id," + utils.Int2String(user_id) + " user_id from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and id = " + utils.Int2String(ob.AccountId)).QueryRow(&coaDetail)
 			}
 			if err == orm.ErrNoRows {
 				resultChan <- utils.ResultChan{Id: v.AccountId, Data: "Invalid detail id", Message: "chart of account unregistered/Illegal data"}
@@ -497,17 +551,19 @@ func (c *PettyCashV2Controller) Put() {
 				return
 			}
 
+			if coaDetail.UserId != user_id {
+				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' is not your access right", coaDetail.CodeCoa)}
+				return
+			}
+
 			if coaDetail.StatusId == 0 {
 				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' has been set as INACTIVE", coaDetail.CodeCoa)}
 				return
 			}
 
-		}(v)
-		v.AccountCode = coaDetail.CodeCoa
-		v.AccountName = coaDetail.NameCoa
-		v.CreatedBy = querydetail.CreatedBy
-		debet += v.Debet
-		credit += v.Credit
+		}(k)
+		debet += k.Debet
+		credit += k.Credit
 	}
 
 	// Use goroutine to wait until all goroutines are finished
@@ -537,12 +593,10 @@ func (c *PettyCashV2Controller) Put() {
 	num = querydata.VoucherSeqNo
 	period = string(thedate.Format("20060102"))
 	reference_no = querydata.VoucherNo
+	batch_no = string(thedate.Format("200601")) + reference_no
 
 	t_pettycashh.Id = id
 	t_pettycashh.IssueDate = thedate
-	t_pettycashh.CompanyId = querydata.CompanyId
-	t_pettycashh.CompanyCode = querydata.CompanyCode
-	t_pettycashh.CompanyName = querydata.CompanyName
 	t_pettycashh.AccountId = ob.AccountId
 	t_pettycashh.AccountCode = coa.CodeCoa
 	t_pettycashh.AccountName = coa.NameCoa
@@ -551,10 +605,16 @@ func (c *PettyCashV2Controller) Put() {
 	t_pettycashh.VoucherNo = reference_no
 	t_pettycashh.Debet = debet
 	t_pettycashh.Credit = credit
-	t_pettycashh.BatchNo = querydata.BatchNo
+	t_pettycashh.BatchNo = batch_no
 	t_pettycashh.TransactionType = ob.TransactionType
 	t_pettycashh.Pic = ob.Pic
 	t_pettycashh.Memo = ob.Memo
+	t_pettycashh.ArId = querydata.ArId
+	t_pettycashh.ArReferenceNo = querydata.ArReferenceNo
+	t_pettycashh.ApId = querydata.ApId
+	t_pettycashh.ApReferenceNo = querydata.ApReferenceNo
+	t_pettycashh.LoanId = querydata.LoanId
+	t_pettycashh.LoanReferenceNo = querydata.LoanReferenceNo
 	t_pettycashh.Period = utils.String2Int(period)
 	t_pettycashh.StatusId = querydata.StatusId
 	t_pettycashh.StatusGlId = querydata.StatusGlId
@@ -571,9 +631,6 @@ func (c *PettyCashV2Controller) Put() {
 				inputDetail = append(inputDetail, models.PettyCash{
 					IssueDate:         thedate,
 					VoucherId:         id,
-					CompanyId:         0,
-					CompanyCode:       "",
-					CompanyName:       "",
 					AccountIdHeader:   ob.AccountId,
 					AccountCodeHeader: coa.CodeCoa,
 					AccountNameHeader: coa.NameCoa,
@@ -581,7 +638,7 @@ func (c *PettyCashV2Controller) Put() {
 					AccountId:         v.AccountId,
 					AccountCode:       v.AccountCode,
 					AccountName:       v.AccountName,
-					VoucherSeqNo:      voucher_seq_no,
+					VoucherSeqNo:      num,
 					VoucherCode:       voucher_code,
 					VoucherNo:         reference_no,
 					Debet:             v.Debet,
@@ -592,7 +649,8 @@ func (c *PettyCashV2Controller) Put() {
 					Period:            utils.String2Int(period),
 					StatusId:          querydata.StatusId,
 					StatusGlId:        querydata.StatusGlId,
-					CreatedBy:         v.CreatedBy,
+					BatchNo:           batch_no,
+					CreatedBy:         user_name,
 					UpdatedBy:         user_name,
 				})
 				i += 1
@@ -611,17 +669,24 @@ func (c *PettyCashV2Controller) Put() {
 					AccountId:         v.AccountId,
 					AccountCode:       v.AccountCode,
 					AccountName:       v.AccountName,
-					VoucherSeqNo:      voucher_seq_no,
+					VoucherSeqNo:      num,
 					VoucherCode:       voucher_code,
 					VoucherNo:         reference_no,
 					Debet:             v.Debet,
 					Credit:            v.Credit,
 					Pic:               v.Pic,
 					Memo:              v.Memo,
+					ArId:              querydata.ArId,
+					ArReferenceNo:     querydata.ArReferenceNo,
+					ApId:              querydata.ApId,
+					ApReferenceNo:     querydata.ApReferenceNo,
+					LoanId:            querydata.LoanId,
+					LoanReferenceNo:   querydata.LoanReferenceNo,
 					TransactionType:   ob.TransactionType,
 					Period:            utils.String2Int(period),
 					StatusId:          querydata.StatusId,
 					StatusGlId:        querydata.StatusGlId,
+					BatchNo:           batch_no,
 					CreatedBy:         v.CreatedBy,
 					UpdatedBy:         user_name,
 				})
@@ -707,6 +772,27 @@ func (c *PettyCashV2Controller) Delete() {
 		return
 	}
 
+	if querydata.LoanId > 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Invalid data", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by loan '" + querydata.LoanReferenceNo + "'"})
+		c.ServeJSON()
+		return
+	}
+
+	if querydata.ArId > 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Invalid data", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ar '" + querydata.ArReferenceNo + "'"})
+		c.ServeJSON()
+		return
+	}
+
+	if querydata.ApId > 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Invalid data", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ap '" + querydata.ApReferenceNo + "'"})
+		c.ServeJSON()
+		return
+	}
+
 	models.PettyCashHeaders().Filter("id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
 	models.PettyCashs().Filter("voucher_id", id).Filter("deleted_at__isnull", true).Update(orm.Params{"deleted_at": utils.GetSvrDate(), "deleted_by": user_name})
 
@@ -737,9 +823,219 @@ func (c *PettyCashV2Controller) GetOne() {
 	c.ServeJSON()
 }
 
-func (c *PettyCashV2Controller) GetAll() {}
+func (c *PettyCashV2Controller) GetAll() {
+	var issueDate, issueDate2, updatedat *string
+	var user_id int
 
-func (c *PettyCashV2Controller) GetAllDetail() {}
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+
+	user_id = 1
+	currentPage, _ := c.GetInt("page")
+	if currentPage == 0 {
+		currentPage = 1
+	}
+
+	pageSize, _ := c.GetInt("pagesize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+	allsize, _ := c.GetInt("allsize")
+	search_detail, _ := c.GetInt("search_detail")
+
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	issue_date2 := strings.TrimSpace(c.GetString("issue_date2"))
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	status := strings.TrimSpace(c.GetString("status"))
+	account_id, _ := c.GetInt("account_id")
+	is_transaction, _ := c.GetInt("is_transaction")
+	report_type := 1
+
+	if issue_date == "" {
+		issueDate = nil
+
+	} else {
+		issueDate = &issue_date
+	}
+
+	if issue_date2 == "" {
+		issueDate2 = nil
+
+	} else {
+		issueDate2 = &issue_date2
+	}
+
+	if updated_at == "" {
+		updatedat = nil
+	} else {
+		updatedat = &updated_at
+	}
+	d, err := t_pettycashh.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, account_id, is_transaction, status, issueDate, issueDate2, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *PettyCashV2Controller) GetAllChild() {
+	var issueDate, issueDate2, updatedat *string
+	var user_id int
+
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	user_id = 1
+	currentPage, _ := c.GetInt("page")
+	if currentPage == 0 {
+		currentPage = 1
+	}
+
+	pageSize, _ := c.GetInt("pagesize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+	allsize, _ := c.GetInt("allsize")
+	search_detail, _ := c.GetInt("search_detail")
+	account_id, _ := c.GetInt("account_id")
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	issue_date2 := strings.TrimSpace(c.GetString("issue_date2"))
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	status := strings.TrimSpace(c.GetString("status"))
+	is_transaction, _ := c.GetInt("is_transaction")
+	report_type := 2
+
+	if issue_date == "" {
+		issueDate = nil
+
+	} else {
+		issueDate = &issue_date
+	}
+
+	if issue_date2 == "" {
+		issueDate2 = nil
+
+	} else {
+		issueDate2 = &issue_date2
+	}
+
+	if updated_at == "" {
+		updatedat = nil
+	} else {
+		updatedat = &updated_at
+	}
+	d, err := t_pettycashh.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, account_id, is_transaction, status, issueDate, issueDate2, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", nil)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *PettyCashV2Controller) GetAllDetail() {
+	var issueDate, issueDate2, updatedat, voucherId *string
+	var user_id int
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	user_id = 1
+	currentPage, _ := c.GetInt("page")
+	if currentPage == 0 {
+		currentPage = 1
+	}
+
+	pageSize, _ := c.GetInt("pagesize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	match_mode := strings.TrimSpace(c.GetString("match_mode"))
+	value_name := strings.TrimSpace(c.GetString("value_name"))
+	field_name := strings.TrimSpace(c.GetString("field_name"))
+	allsize, _ := c.GetInt("allsize")
+	search_detail, _ := c.GetInt("search_detail")
+
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	issue_date2 := strings.TrimSpace(c.GetString("issue_date2"))
+	updated_at := strings.TrimSpace(c.GetString("updated_at"))
+	voucher_ids := strings.TrimSpace(c.GetString("voucher_ids"))
+	status := strings.TrimSpace(c.GetString("status"))
+	account_id, _ := c.GetInt("account_id")
+	is_transaction, _ := c.GetInt("is_transaction")
+
+	if issue_date == "" {
+		issueDate = nil
+
+	} else {
+		issueDate = &issue_date
+	}
+
+	if issue_date2 == "" {
+		issueDate2 = nil
+
+	} else {
+		issueDate2 = &issue_date2
+	}
+
+	if updated_at == "" {
+		updatedat = nil
+	} else {
+		updatedat = &updated_at
+	}
+
+	if voucher_ids == "" {
+		voucherId = nil
+	} else {
+		voucherId = &voucher_ids
+	}
+
+	report_type := 0
+	d, err := t_pettycashh.GetAllDetail(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, account_id, is_transaction, status, voucherId, issueDate, issueDate2, updatedat)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, "No data", d)
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, map[string]interface{}{
+			"field_key":          d[0]["field_key"],
+			"field_label":        d[0]["field_label"],
+			"field_int":          d[0]["field_int"],
+			"field_level":        d[0]["field_level"],
+			"field_export":       d[0]["field_export"],
+			"field_export_label": d[0]["field_export_label"],
+			"field_footer":       d[0]["field_footer"],
+			"list":               d,
+		})
+	}
+	c.ServeJSON()
+}
 
 func (c *PettyCashV2Controller) ReOrderNum() {
 	var user_name string
@@ -854,6 +1150,63 @@ func (c *PettyCashV2Controller) ReOrderNumList() {
 	} else {
 
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *PettyCashV2Controller) GetAllList() {
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	transaction_type := strings.TrimSpace(c.GetString("transaction_type"))
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	d, err := t_pettycashh.GetAllList(id, issue_date, utils.ToUpper(transaction_type), keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *PettyCashV2Controller) GetDocument() {
+	o := orm.NewOrm()
+	var user_id int
+	var folder_name string = "petty_cash"
+	var err error
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+	form_id := base.FormName(form_petty_cash)
+	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+
+	var coa coaUserRtn
+	var document models.Document
+	if !aut_aut {
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code,user_id from chart_of_accounts t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and t0.id = " + utils.Int2String(id)).QueryRow(&coa)
+	} else {
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code," + utils.Int2String(user_id) + " user_id from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and id = " + utils.Int2String(id)).QueryRow(&coa)
+	}
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+
+		d := document.GetDocument(id, folder_name)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	}
 	c.ServeJSON()
 }

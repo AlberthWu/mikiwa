@@ -33,6 +33,7 @@ type (
 		EmployeeId      int                     `json:"employee_id"`
 		LeadTime        int                     `json:"lead_time"`
 		StatusId        int8                    `json:"status_id"`
+		TransporterId   int                     `json:"transporter_id"`
 		DeliveryAddress string                  `json:"delivery_address"`
 		UploadFile      models.DocumentList     `json:"upload_file"`
 		Detail          []InputDetailSalesOrder `json:"detail"`
@@ -94,6 +95,7 @@ func (c *SalesOrderController) Post() {
 	valid.Required(ob.LeadTime, "lead_time").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 	valid.Required(ob.EmployeeId, "employee_id").Message("Is required")
+	valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
 	valid.Required(ob.OutletId, "outlet_id").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.DeliveryAddress), "delivery_address").Message("Is required")
 
@@ -179,6 +181,29 @@ func (c *SalesOrderController) Post() {
 	if outlet.Status == 0 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", outlet.Name))
+		c.ServeJSON()
+		return
+	}
+
+	var transporter models.Company
+	err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Transporter unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
+	if transporter.Status == 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
 		c.ServeJSON()
 		return
 	}
@@ -300,6 +325,8 @@ func (c *SalesOrderController) Post() {
 		DeliveryAddress: ob.DeliveryAddress,
 		EmployeeId:      ob.EmployeeId,
 		EmployeeName:    "",
+		TransporterId:   ob.TransporterId,
+		TransporterCode: transporter.Code,
 		LeadTime:        ob.LeadTime,
 		Subtotal:        subtotal_,
 		TotalDisc:       totalDisc_,
@@ -526,6 +553,7 @@ func (c *SalesOrderController) Put() {
 	valid.Required(ob.LeadTime, "lead_time").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 	valid.Required(ob.EmployeeId, "employee_id").Message("Is required")
+	valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
 	valid.Required(ob.OutletId, "outlet_id").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.DeliveryAddress), "delivery_address").Message("Is required")
 
@@ -611,6 +639,29 @@ func (c *SalesOrderController) Put() {
 	if outlet.Status == 0 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", outlet.Name))
+		c.ServeJSON()
+		return
+	}
+
+	var transporter models.Company
+	err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
+	if err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Transporter unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
+	if transporter.Status == 0 {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
 		c.ServeJSON()
 		return
 	}
@@ -767,6 +818,8 @@ func (c *SalesOrderController) Put() {
 	t_sales_order.DeliveryAddress = ob.DeliveryAddress
 	t_sales_order.EmployeeId = ob.EmployeeId
 	t_sales_order.EmployeeName = ""
+	t_sales_order.TransporterId = ob.TransporterId
+	t_sales_order.TransporterCode = transporter.Code
 	t_sales_order.LeadTime = ob.LeadTime
 	t_sales_order.Subtotal = subtotal_
 	t_sales_order.TotalDisc = totalDisc_

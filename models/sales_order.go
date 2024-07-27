@@ -26,6 +26,8 @@ type (
 		PlantName         string    `json:"plant_name" orm:"column(plant_name)"`
 		Terms             int       `json:"terms" orm:"column(terms)"`
 		DeliveryAddress   string    `json:"delivery_address" orm:"column(delivery_address)"`
+		TransporterId     int       `json:"transporter_id" orm:"column(transporter_id)"`
+		TransporterCode   string    `json:"transporter_code" orm:"column(transporter_code)"`
 		EmployeeId        int       `json:"employee_id" orm:"column(employee_id)"`
 		EmployeeName      string    `json:"employee_name" orm:"column(employee_name)"`
 		LeadTime          int       `json:"lead_time" orm:"column(lead_time)"`
@@ -264,6 +266,7 @@ type (
 		OutletId          SimplePlantRtnJson   `json:"outlet_id"`
 		CustomerId        SimpleCompanyRtnJson `json:"customer_id"`
 		PlantId           SimplePlantRtnJson   `json:"plant_id"`
+		TransporterId     SimpleCompanyRtnJson `json:"transporter_id"`
 		Terms             int                  `json:"terms"`
 		DeliveryAddress   string               `json:"delivery_address"`
 		EmployeeId        int                  `json:"employee_id"`
@@ -298,6 +301,9 @@ type (
 		DeliveryAddress   string  `json:"delivery_address"`
 		EmployeeId        int     `json:"employee_id"`
 		EmployeeName      string  `json:"employee_name"`
+		TransporterId     int     `json:"transporter_id"`
+		TransporterCode   int     `json:"transporter_code"`
+		TransporterName   int     `json:"transporter_name"`
 		Subtotal          float64 `json:"subtotal"`
 		TotalDisc         float64 `json:"total_disc"`
 		Dpp               float64 `json:"dpp"`
@@ -354,6 +360,9 @@ func (t *SalesOrder) GetById(id, user_id int) (m *SalesOrderRtn, err error) {
 	var plant SimplePlantRtnJson
 	o.Raw("select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(t.PlantId) + "").QueryRow(&plant)
 
+	var transporter SimpleCompanyRtnJson
+	o.Raw("select id,code,name  from companies where id  =" + utils.Int2String(t.TransporterId) + " ").QueryRow(&transporter)
+
 	dlist := t.GetDetail(id, user_id)
 
 	m = &SalesOrderRtn{
@@ -377,6 +386,7 @@ func (t *SalesOrder) GetById(id, user_id int) (m *SalesOrderRtn, err error) {
 		Total:             t.Total,
 		StatusId:          t.StatusId,
 		StatusDescription: t.StatusDescription,
+		TransporterId:     transporter,
 		Detail:            dlist,
 	}
 
