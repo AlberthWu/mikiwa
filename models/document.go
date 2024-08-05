@@ -14,6 +14,7 @@ type (
 		PathName    string    `json:"path_name" orm:"column(path_name)"`
 		PathFile    string    `json:"path_file" orm:"column(path_file)"`
 		FileType    string    `json:"file_type" orm:"column(file_type)"`
+		FolderName  string    `json:"folder_name" orm:"column(folder_name)"`
 		CreatedAt   time.Time `json:"created_at" orm:"column(created_at);type(timestamp);auto_now_add"`
 		UpdatedAt   time.Time `json:"updated_at" orm:"column(updated_at);type(timestamp);auto_now"`
 		DeletedAt   time.Time `json:"deleted_at" orm:"column(deleted_at);type(timestamp);null"`

@@ -237,7 +237,7 @@ func (c *ProductController) Post() {
 		}
 
 		o.InsertMulti(i, inputDetail)
-		if err := base.PostFirebaseRaw(ob.UploadFile, user_name, d.Id, folderName+"/"+utils.Int2String(d.Id), folderName+"/"+utils.Int2String(d.Id)); err != nil {
+		if err := base.PostFirebaseRaw(ob.UploadFile, user_name, d.Id, folderName+"/"+utils.Int2String(d.Id), folderName+"/"+utils.Int2String(d.Id), folderName); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprint("Error processing data and uploading to Firebase: ", err.Error()))
 			c.ServeJSON()
@@ -476,7 +476,7 @@ func (c *ProductController) Put() {
 		}
 
 		o.InsertMulti(i, inputDetail)
-		if err := base.PutFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
+		if err := base.PutFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id), folderName); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprint("Error processing data and uploading to Firebase: ", err.Error()))
 			c.ServeJSON()
@@ -706,7 +706,7 @@ func (c *ProductController) PostDocument() {
 		c.Ctx.ResponseWriter.WriteHeader(code)
 		utils.ReturnHTTPError(&c.Controller, code, message)
 	} else {
-		if err := base.PutFilesFirebase(upload_file, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
+		if err := base.PutFilesFirebase(upload_file, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id), folderName); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error while posting files to Firebase: %s", err.Error()))
 			c.ServeJSON()

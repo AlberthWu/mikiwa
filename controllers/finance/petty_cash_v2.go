@@ -27,6 +27,7 @@ func (c *PettyCashV2Controller) Prepare() {
 type (
 	InputHeaderPettyCash struct {
 		IssueDate       string                 `json:"issue_date"`
+		CompanyId       int                    `json:"company_id"`
 		AccountId       int                    `json:"account_id"`
 		TransactionType string                 `json:"transaction_type"`
 		VoucherNo       string                 `json:"voucher_no"`
@@ -75,11 +76,10 @@ func (c *PettyCashV2Controller) Post() {
 		user_id = sess.(map[string]interface{})["id"].(int)
 		user_name = sess.(map[string]interface{})["username"].(string)
 	}
-	user_id = 1
+
 	form_id = base.FormName(form_petty_cash)
 	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
 	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
-
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorize", map[string]interface{}{"message": "Please contact administrator"})
@@ -124,6 +124,21 @@ func (c *PettyCashV2Controller) Post() {
 		return
 	}
 
+	var companies models.Company
+	if err = models.Companies().Filter("id", ob.CompanyId).Filter("CompanyTypes__TypeId__Id", base.Internal).Filter("deleted_at__isnull", true).One(&companies); err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Company unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
 	var coa coaUserRtn
 	if !aut_aut {
 		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code,user_id from chart_of_accounts t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and t0.id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
@@ -146,7 +161,7 @@ func (c *PettyCashV2Controller) Post() {
 
 	if coa.UserId != user_id {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your access right", coa.CodeCoa))
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your account", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
@@ -154,6 +169,13 @@ func (c *PettyCashV2Controller) Post() {
 	if coa.StatusId == 0 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error account '%v' has been set as INACTIVE", coa.CodeCoa))
+		c.ServeJSON()
+		return
+	}
+
+	if coa.CompanyId != ob.CompanyId {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code))
 		c.ServeJSON()
 		return
 	}
@@ -186,7 +208,7 @@ func (c *PettyCashV2Controller) Post() {
 			}
 
 			if coaDetail.UserId != user_id {
-				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' is not your access right", coaDetail.CodeCoa)}
+				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' is not your account", coaDetail.CodeCoa)}
 				return
 			}
 
@@ -195,6 +217,10 @@ func (c *PettyCashV2Controller) Post() {
 				return
 			}
 
+			if coa.CompanyId != ob.CompanyId {
+				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code)}
+				return
+			}
 		}(v)
 		debet += v.Debet
 		credit += v.Credit
@@ -237,7 +263,7 @@ func (c *PettyCashV2Controller) Post() {
 		return
 	}
 
-	num, reference_no = models.GeneratePettyCashNumber(thedate, 0, ob.AccountId, "", voucher_code, ob.TransactionType)
+	num, reference_no = models.GeneratePettyCashNumber(thedate, ob.CompanyId, ob.AccountId, companies.Code, voucher_code, ob.TransactionType)
 	period = string(thedate.Format("20060102"))
 	batch_no = string(thedate.Format("200601")) + reference_no
 
@@ -248,6 +274,9 @@ func (c *PettyCashV2Controller) Post() {
 
 	t_pettycashh = models.PettyCashHeader{
 		IssueDate:       thedate,
+		CompanyId:       ob.CompanyId,
+		CompanyCode:     companies.Code,
+		CompanyName:     companies.Name,
 		AccountId:       ob.AccountId,
 		AccountCode:     coa.CodeCoa,
 		AccountName:     coa.NameCoa,
@@ -277,6 +306,9 @@ func (c *PettyCashV2Controller) Post() {
 				inputDetail = append(inputDetail, models.PettyCash{
 					IssueDate:         thedate,
 					VoucherId:         t_pettycashh.Id,
+					CompanyId:         ob.CompanyId,
+					CompanyCode:       companies.Code,
+					CompanyName:       companies.Name,
 					AccountIdHeader:   ob.AccountId,
 					AccountCodeHeader: coa.CodeCoa,
 					AccountNameHeader: coa.NameCoa,
@@ -313,7 +345,7 @@ func (c *PettyCashV2Controller) Post() {
 		c.ServeJSON()
 		return
 	} else {
-		if err = base.PostFirebaseRaw(ob.UploadFile, user_name, d.Id, folderName+"/"+utils.Int2String(d.Id), folderName+"/"+utils.Int2String(d.Id)); err != nil {
+		if err = base.PostFirebaseRaw(ob.UploadFile, user_name, d.Id, folderName+"/"+utils.Int2String(d.Id), folderName+"/"+utils.Int2String(d.Id), folderName); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprint("Error processing data and uploading to Firebase: ", err.Error()))
 		} else {
@@ -344,7 +376,7 @@ func (c *PettyCashV2Controller) Put() {
 		user_id = sess.(map[string]interface{})["id"].(int)
 		user_name = sess.(map[string]interface{})["username"].(string)
 	}
-	user_id = 1
+
 	form_id = base.FormName(form_petty_cash)
 	put_aut := models.CheckPrivileges(user_id, form_id, base.Update)
 	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
@@ -448,6 +480,7 @@ func (c *PettyCashV2Controller) Put() {
 			return
 		}
 	}
+	ob.CompanyId = querydata.CompanyId
 	ob.TransactionType = querydata.TransactionType
 	ob.AccountId = querydata.AccountId
 	if querydata.VoucherSeqNo != 0 {
@@ -477,6 +510,21 @@ func (c *PettyCashV2Controller) Put() {
 		return
 	}
 
+	var companies models.Company
+	if err = models.Companies().Filter("id", ob.CompanyId).Filter("CompanyTypes__TypeId__Id", base.Internal).Filter("deleted_at__isnull", true).One(&companies); err == orm.ErrNoRows {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Company unregistered/Illegal data")
+		c.ServeJSON()
+		return
+	}
+
+	if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+		c.ServeJSON()
+		return
+	}
+
 	var coa coaUserRtn
 	if !aut_aut {
 		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code,user_id from chart_of_accounts t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and t0.id = " + utils.Int2String(ob.AccountId)).QueryRow(&coa)
@@ -500,7 +548,7 @@ func (c *PettyCashV2Controller) Put() {
 
 	if coa.UserId != user_id {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your access right", coa.CodeCoa))
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your account", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
@@ -508,6 +556,13 @@ func (c *PettyCashV2Controller) Put() {
 	if coa.StatusId == 0 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", coa.CodeCoa))
+		c.ServeJSON()
+		return
+	}
+
+	if coa.CompanyId != ob.CompanyId {
+		c.Ctx.ResponseWriter.WriteHeader(402)
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code))
 		c.ServeJSON()
 		return
 	}
@@ -552,7 +607,7 @@ func (c *PettyCashV2Controller) Put() {
 			}
 
 			if coaDetail.UserId != user_id {
-				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' is not your access right", coaDetail.CodeCoa)}
+				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("'%v' is not your account", coaDetail.CodeCoa)}
 				return
 			}
 
@@ -561,6 +616,10 @@ func (c *PettyCashV2Controller) Put() {
 				return
 			}
 
+			if coa.CompanyId != ob.CompanyId {
+				resultChan <- utils.ResultChan{Id: v.AccountId, Data: coaDetail.CodeCoa, Message: fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code)}
+				return
+			}
 		}(k)
 		debet += k.Debet
 		credit += k.Credit
@@ -597,6 +656,9 @@ func (c *PettyCashV2Controller) Put() {
 
 	t_pettycashh.Id = id
 	t_pettycashh.IssueDate = thedate
+	t_pettycashh.CompanyId = querydata.CompanyId
+	t_pettycashh.CompanyCode = querydata.CompanyCode
+	t_pettycashh.CompanyName = querydata.CompanyName
 	t_pettycashh.AccountId = ob.AccountId
 	t_pettycashh.AccountCode = coa.CodeCoa
 	t_pettycashh.AccountName = coa.NameCoa
@@ -631,6 +693,9 @@ func (c *PettyCashV2Controller) Put() {
 				inputDetail = append(inputDetail, models.PettyCash{
 					IssueDate:         thedate,
 					VoucherId:         id,
+					CompanyId:         ob.CompanyId,
+					CompanyCode:       companies.Code,
+					CompanyName:       companies.Name,
 					AccountIdHeader:   ob.AccountId,
 					AccountCodeHeader: coa.CodeCoa,
 					AccountNameHeader: coa.NameCoa,
@@ -659,9 +724,9 @@ func (c *PettyCashV2Controller) Put() {
 					Id:                v.Id,
 					IssueDate:         thedate,
 					VoucherId:         id,
-					CompanyId:         0,
-					CompanyCode:       "",
-					CompanyName:       "",
+					CompanyId:         ob.CompanyId,
+					CompanyCode:       companies.Code,
+					CompanyName:       companies.Name,
 					AccountIdHeader:   ob.AccountId,
 					AccountCodeHeader: coa.CodeCoa,
 					AccountNameHeader: coa.NameCoa,
@@ -704,7 +769,7 @@ func (c *PettyCashV2Controller) Put() {
 		c.ServeJSON()
 		return
 	} else {
-		if err = base.PutFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
+		if err = base.PutFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id), folderName); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprint("Error processing data and uploading to Firebase: ", err.Error()))
 		} else {
@@ -806,6 +871,7 @@ func (c *PettyCashV2Controller) GetOne() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
+
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	v, err := t_pettycashh.GetById(id, user_id)
 	code, message := base.DecodeErr(err)
@@ -832,7 +898,6 @@ func (c *PettyCashV2Controller) GetAll() {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
 
-	user_id = 1
 	currentPage, _ := c.GetInt("page")
 	if currentPage == 0 {
 		currentPage = 1
@@ -855,6 +920,7 @@ func (c *PettyCashV2Controller) GetAll() {
 	status := strings.TrimSpace(c.GetString("status"))
 	account_id, _ := c.GetInt("account_id")
 	is_transaction, _ := c.GetInt("is_transaction")
+	company_id, _ := c.GetInt("company_id")
 	report_type := 1
 
 	if issue_date == "" {
@@ -876,7 +942,7 @@ func (c *PettyCashV2Controller) GetAll() {
 	} else {
 		updatedat = &updated_at
 	}
-	d, err := t_pettycashh.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, account_id, is_transaction, status, issueDate, issueDate2, updatedat)
+	d, err := t_pettycashh.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, company_id, account_id, is_transaction, status, issueDate, issueDate2, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(code)
@@ -898,7 +964,7 @@ func (c *PettyCashV2Controller) GetAllChild() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
-	user_id = 1
+
 	currentPage, _ := c.GetInt("page")
 	if currentPage == 0 {
 		currentPage = 1
@@ -920,6 +986,7 @@ func (c *PettyCashV2Controller) GetAllChild() {
 	updated_at := strings.TrimSpace(c.GetString("updated_at"))
 	status := strings.TrimSpace(c.GetString("status"))
 	is_transaction, _ := c.GetInt("is_transaction")
+	company_id, _ := c.GetInt("company_id")
 	report_type := 2
 
 	if issue_date == "" {
@@ -941,7 +1008,7 @@ func (c *PettyCashV2Controller) GetAllChild() {
 	} else {
 		updatedat = &updated_at
 	}
-	d, err := t_pettycashh.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, account_id, is_transaction, status, issueDate, issueDate2, updatedat)
+	d, err := t_pettycashh.GetAll(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, company_id, account_id, is_transaction, status, issueDate, issueDate2, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(code)
@@ -962,7 +1029,7 @@ func (c *PettyCashV2Controller) GetAllDetail() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
-	user_id = 1
+
 	currentPage, _ := c.GetInt("page")
 	if currentPage == 0 {
 		currentPage = 1
@@ -986,6 +1053,7 @@ func (c *PettyCashV2Controller) GetAllDetail() {
 	status := strings.TrimSpace(c.GetString("status"))
 	account_id, _ := c.GetInt("account_id")
 	is_transaction, _ := c.GetInt("is_transaction")
+	company_id, _ := c.GetInt("company_id")
 
 	if issue_date == "" {
 		issueDate = nil
@@ -1014,7 +1082,7 @@ func (c *PettyCashV2Controller) GetAllDetail() {
 	}
 
 	report_type := 0
-	d, err := t_pettycashh.GetAllDetail(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, account_id, is_transaction, status, voucherId, issueDate, issueDate2, updatedat)
+	d, err := t_pettycashh.GetAllDetail(keyword, field_name, match_mode, value_name, currentPage, pageSize, allsize, user_id, search_detail, report_type, company_id, account_id, is_transaction, status, voucherId, issueDate, issueDate2, updatedat)
 	code, message := base.DecodeErr(err)
 	if err == orm.ErrNoRows {
 		c.Ctx.ResponseWriter.WriteHeader(code)
@@ -1033,6 +1101,64 @@ func (c *PettyCashV2Controller) GetAllDetail() {
 			"field_footer":       d[0]["field_footer"],
 			"list":               d,
 		})
+	}
+	c.ServeJSON()
+}
+
+func (c *PettyCashV2Controller) GetAllList() {
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	transaction_type := strings.TrimSpace(c.GetString("transaction_type"))
+	issue_date := strings.TrimSpace(c.GetString("issue_date"))
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+	d, err := t_pettycashh.GetAllList(id, issue_date, utils.ToUpper(transaction_type), keyword)
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
+
+func (c *PettyCashV2Controller) GetDocument() {
+	o := orm.NewOrm()
+	var user_id int
+	var folder_name string = "petty_cash"
+	var err error
+	sess := c.GetSession("profile")
+	if sess != nil {
+		user_id = sess.(map[string]interface{})["id"].(int)
+	}
+
+	form_id := base.FormName(form_petty_cash)
+	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
+	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
+
+	var coa coaUserRtn
+	var document models.Document
+	if !aut_aut {
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code,user_id from chart_of_accounts t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and t0.id in (select account_id from petty_cash_header where id = " + utils.Int2String(id) + ")").QueryRow(&coa)
+	} else {
+		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code," + utils.Int2String(user_id) + " user_id from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and id in (select account_id from petty_cash_header where id = " + utils.Int2String(id) + ")").QueryRow(&coa)
+	}
+	code, message := base.DecodeErr(err)
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else {
+
+		d := document.GetDocument(id, folder_name)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	}
 	c.ServeJSON()
 }
@@ -1150,63 +1276,6 @@ func (c *PettyCashV2Controller) ReOrderNumList() {
 	} else {
 
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
-	}
-	c.ServeJSON()
-}
-
-func (c *PettyCashV2Controller) GetAllList() {
-	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
-	transaction_type := strings.TrimSpace(c.GetString("transaction_type"))
-	issue_date := strings.TrimSpace(c.GetString("issue_date"))
-	keyword := strings.TrimSpace(c.GetString("keyword"))
-	d, err := t_pettycashh.GetAllList(id, issue_date, utils.ToUpper(transaction_type), keyword)
-	code, message := base.DecodeErr(err)
-	if err == orm.ErrNoRows {
-		code = 200
-		c.Ctx.ResponseWriter.WriteHeader(code)
-		utils.ReturnHTTPError(&c.Controller, code, "No data")
-	} else if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(code)
-		utils.ReturnHTTPError(&c.Controller, code, message)
-	} else {
-
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
-	}
-	c.ServeJSON()
-}
-
-func (c *PettyCashV2Controller) GetDocument() {
-	o := orm.NewOrm()
-	var user_id int
-	var folder_name string = "petty_cash"
-	var err error
-	sess := c.GetSession("profile")
-	if sess != nil {
-		user_id = sess.(map[string]interface{})["id"].(int)
-	}
-	form_id := base.FormName(form_petty_cash)
-	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
-	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
-
-	var coa coaUserRtn
-	var document models.Document
-	if !aut_aut {
-		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code,user_id from chart_of_accounts t0 left join (select user_id,account_id from sys_user_account where  user_id = " + utils.Int2String(user_id) + " ) t1 on t1.account_id = t0.id where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and t0.id = " + utils.Int2String(id)).QueryRow(&coa)
-	} else {
-		err = o.Raw("select id,code_coa,name_coa,code_in,code_out,status_id,company_id,company_code," + utils.Int2String(user_id) + " user_id from chart_of_accounts where deleted_at is null  and id not in (select parent_id from chart_of_accounts where deleted_at is null)  and is_header = 1 and id = " + utils.Int2String(id)).QueryRow(&coa)
-	}
-	code, message := base.DecodeErr(err)
-	if err == orm.ErrNoRows {
-		code = 200
-		c.Ctx.ResponseWriter.WriteHeader(code)
-		utils.ReturnHTTPError(&c.Controller, code, "No data")
-	} else if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(code)
-		utils.ReturnHTTPError(&c.Controller, code, message)
-	} else {
-
-		d := document.GetDocument(id, folder_name)
-		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 200, "Success", d)
 	}
 	c.ServeJSON()
 }
