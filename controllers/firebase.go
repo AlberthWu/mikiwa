@@ -47,7 +47,7 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 	for _, fileHeader := range files {
 		file, err := fileHeader.Open()
 		if err != nil {
-			return fmt.Errorf("File upload error: %s", err.Error())
+			return fmt.Errorf("file upload error: %s", err.Error())
 		}
 		defer file.Close()
 
@@ -275,17 +275,17 @@ func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId i
 	}
 	app, err := firebase.NewApp(context.Background(), config, opt)
 	if err != nil {
-		return fmt.Errorf("Error Firebase app initialization: %s", err.Error())
+		return fmt.Errorf("error Firebase app initialization: %s", err.Error())
 	}
 
 	storageClient, err := app.Storage(context.Background())
 	if err != nil {
-		return fmt.Errorf("error initializing storage client: %v\n", err)
+		return fmt.Errorf("error initializing storage client: %v", err.Error())
 	}
 
 	bucketHandle, err := storageClient.Bucket(storageBucket)
 	if err != nil {
-		return fmt.Errorf("error getting bucket handle: %v\n", err)
+		return fmt.Errorf("error getting bucket handle: %v", err.Error())
 	}
 
 	for i, file := range rawData.File {
@@ -442,12 +442,12 @@ func PostFirebaseRawOne(rawData models.FirebaseFile, userName string, ReferenceI
 
 	storageClient, err := app.Storage(context.Background())
 	if err != nil {
-		return fmt.Errorf("error initializing storage client: %v\n", err)
+		return fmt.Errorf("error initializing storage client: %v", err)
 	}
 
 	bucketHandle, err := storageClient.Bucket(storageBucket)
 	if err != nil {
-		return fmt.Errorf("error getting bucket handle: %v\n", err)
+		return fmt.Errorf("error getting bucket handle: %v", err)
 	}
 
 	fileName := uuid.New().String()
