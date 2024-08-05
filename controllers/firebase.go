@@ -31,7 +31,7 @@ func (c *FirebaseController) Prepare() {
 	c.BaseController.Prepare()
 }
 
-func PostFilesToFirebase(files []*multipart.FileHeader, userName string, ReferenceId int, pathName string, typeData string) error {
+func PostFilesToFirebase(files []*multipart.FileHeader, userName string, ReferenceId int, pathName string, typeData string, folderName string) error {
 	// filePath, errc := models.FirebaseAuth()
 	// if errc != nil {
 	// 	return fmt.Errorf("Error getting Firebase config: %s", errc.Error())
@@ -47,7 +47,7 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 	for _, fileHeader := range files {
 		file, err := fileHeader.Open()
 		if err != nil {
-			return fmt.Errorf("Error File upload: %s", err.Error())
+			return fmt.Errorf("File upload error: %s", err.Error())
 		}
 		defer file.Close()
 
@@ -70,6 +70,8 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 		if err != nil {
 			return fmt.Errorf("Error firebase default bucket retrieval: %s", err.Error())
 		}
+
+		pathName = strings.Replace(pathName, "%2F", "/", -1)
 
 		newObj := bucket.Object(pathName + "/" + fileName)
 		wc := newObj.NewWriter(context.Background())
@@ -98,9 +100,9 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 		}
 
 		pathName = strings.Replace(pathName, "/", "%2F", -1)
-		newObjectNamePath := pathName + "/" + fileName
+		newObjectNamePath := pathName + "%2F" + fileName
 
-		downloadURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "mpwdb-9c2d8.appspot.com", newObjectNamePath, fileName)
+		downloadURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "sampurnagroupapp.appspot.com", newObjectNamePath, fileName)
 
 		t_documents := models.Document{
 			ReferenceId: ReferenceId,
@@ -108,6 +110,7 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 			PathName:    fileName,
 			PathFile:    downloadURL,
 			FileType:    typeData,
+			FolderName:  folderName,
 			CreatedBy:   userName,
 			UpdatedBy:   userName,
 		}
@@ -120,7 +123,7 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 	return nil
 }
 
-func PutFilesFirebase(files []*multipart.FileHeader, userName string, ReferenceId int, pathName string, typeData string) error {
+func PutFilesFirebase(files []*multipart.FileHeader, userName string, ReferenceId int, pathName string, typeData string, folderName string) error {
 	o := orm.NewOrm()
 
 	var documents []models.Document
@@ -169,7 +172,7 @@ func PutFilesFirebase(files []*multipart.FileHeader, userName string, ReferenceI
 
 		}
 
-		err := PostFilesToFirebase([]*multipart.FileHeader{fileHeader}, userName, ReferenceId, pathName, typeData)
+		err := PostFilesToFirebase([]*multipart.FileHeader{fileHeader}, userName, ReferenceId, pathName, typeData, folderName)
 		if err != nil {
 			return err
 		}
@@ -257,7 +260,9 @@ func deleteFileFromStorage(fileID string, pathName string) error {
 	return nil
 }
 
-func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId int, pathName string, typeData string) error {
+//TODO: NEW FIREBASE
+
+func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId int, pathName string, typeData string, folderName string) error {
 	filePath, storageBucket, errc := models.ValidateFirebase()
 
 	if errc != nil {
@@ -275,12 +280,12 @@ func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId i
 
 	storageClient, err := app.Storage(context.Background())
 	if err != nil {
-		return fmt.Errorf("Error initializing storage client: %v", err.Error())
+		return fmt.Errorf("error initializing storage client: %v\n", err)
 	}
 
 	bucketHandle, err := storageClient.Bucket(storageBucket)
 	if err != nil {
-		return fmt.Errorf("Error getting bucket handle: %v", err.Error())
+		return fmt.Errorf("error getting bucket handle: %v\n", err)
 	}
 
 	for i, file := range rawData.File {
@@ -293,6 +298,7 @@ func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId i
 
 		ext := filepath.Ext(file.Name)
 		contentType := mime.TypeByExtension(ext)
+		pathName = strings.Replace(pathName, "%2F", "/", -1)
 
 		objectPath := fmt.Sprintf("%s/%s", pathName, fileName)
 		wc := bucketHandle.Object(objectPath).NewWriter(context.Background())
@@ -319,9 +325,9 @@ func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId i
 		}
 
 		pathName = strings.Replace(pathName, "/", "%2F", -1)
-		newObjectNamePath := pathName + "/" + fileName
+		newObjectNamePath := pathName + "%2F" + fileName
 
-		objectURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "mpwdb-9c2d8.appspot.com", newObjectNamePath, fileName)
+		objectURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "sampurnagroupapp.appspot.com", newObjectNamePath, fileName)
 
 		rawData.File[i].ObjectURL = objectURL
 
@@ -331,6 +337,7 @@ func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId i
 			PathName:    fileName,
 			PathFile:    objectURL,
 			FileType:    typeData,
+			FolderName:  folderName,
 			CreatedBy:   userName,
 			UpdatedBy:   userName,
 		}
@@ -343,7 +350,8 @@ func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId i
 	return nil
 }
 
-func PutFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId int, pathName string, typeData string) error {
+// TODO: NEW FIREBASE
+func PutFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId int, pathName string, typeData string, folderName string) error {
 	o := orm.NewOrm()
 
 	var documents []models.Document
@@ -409,8 +417,90 @@ func PutFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId in
 		fmt.Print(rawData.File)
 	}
 
-	if err := PostFirebaseRaw(documentTemp, userName, ReferenceId, pathName, typeData); err != nil {
+	if err := PostFirebaseRaw(documentTemp, userName, ReferenceId, pathName, typeData, folderName); err != nil {
 		return fmt.Errorf("Error processing data and uploading to Firebase: %s", err.Error())
+	}
+
+	return nil
+}
+
+func PostFirebaseRawOne(rawData models.FirebaseFile, userName string, ReferenceId int, pathName string, typeData string, folderName string) error {
+	filePath, storageBucket, errc := models.ValidateFirebase()
+
+	if errc != nil {
+		return fmt.Errorf("Error getting Firebase config: %s", errc.Error())
+	}
+
+	opt := option.WithCredentialsJSON([]byte(filePath))
+	config := &firebase.Config{
+		StorageBucket: storageBucket,
+	}
+	app, err := firebase.NewApp(context.Background(), config, opt)
+	if err != nil {
+		return fmt.Errorf("Error Firebase app initialization: %s", err.Error())
+	}
+
+	storageClient, err := app.Storage(context.Background())
+	if err != nil {
+		return fmt.Errorf("error initializing storage client: %v\n", err)
+	}
+
+	bucketHandle, err := storageClient.Bucket(storageBucket)
+	if err != nil {
+		return fmt.Errorf("error getting bucket handle: %v\n", err)
+	}
+
+	fileName := uuid.New().String()
+	fileBinary, err := base64.StdEncoding.DecodeString(rawData.FileBinary)
+	if err != nil {
+		fmt.Printf("error decoding base64: %v\n", err)
+	}
+
+	ext := filepath.Ext(rawData.Name)
+	contentType := mime.TypeByExtension(ext)
+
+	objectPath := fmt.Sprintf("%s/%s", pathName, fileName)
+	wc := bucketHandle.Object(objectPath).NewWriter(context.Background())
+	wc.ContentType = contentType
+	if _, err := wc.Write(fileBinary); err != nil {
+		fmt.Printf("error writing file to storage: %v\n", err)
+		wc.Close()
+	}
+	if err := wc.Close(); err != nil {
+		fmt.Printf("error closing writer: %v\n", err)
+	}
+
+	objectAttrsToUpdate := storage.ObjectAttrsToUpdate{
+		Metadata: map[string]string{
+			"firebaseStorageDownloadTokens": fileName,
+			"contentType":                   contentType,
+		},
+	}
+
+	if _, err := bucketHandle.Object(pathName+"/"+fileName).Update(context.Background(), objectAttrsToUpdate); err != nil {
+		return fmt.Errorf("Error while updating object metadata: %s", err.Error())
+	}
+
+	pathName = strings.Replace(pathName, "/", "%2F", -1)
+	newObjectNamePath := pathName + "%2F" + fileName
+
+	objectURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "sampurnagroupapp.appspot.com", newObjectNamePath, fileName)
+
+	// rawData.ObjectURL = objectURL
+
+	t_documents := models.Document{
+		ReferenceId: ReferenceId,
+		FileName:    rawData.Name,
+		PathName:    fileName,
+		PathFile:    objectURL,
+		FileType:    typeData,
+		FolderName:  folderName,
+		CreatedBy:   userName,
+		UpdatedBy:   userName,
+	}
+
+	if _, err := t_documents.Insert(t_documents); err != nil {
+		return fmt.Errorf("Error while inserting document record: %s", err.Error())
 	}
 
 	return nil

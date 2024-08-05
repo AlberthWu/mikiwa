@@ -72,6 +72,7 @@ BEGIN
     set transactionOnlySet = case when transactionOnly = 0 then '' else concat(" and (debet is not null or credit is not null)")  end;
     set menuId = (select id from sys_menus where form_name = 'petty_cash');
     set autId = ifnull((select permission_id from sys_role_menu_permission where  menu_id = menuId and permission_id = 6 and role_id in (select role_id from sys_user_role where user_id = userId) limit 1),0);
+    set autId = 6;
     if autId = 0 then
 		SET userIdSet  = concat(" and t0.id in (select account_id from sys_user_account where user_id = ",userId,")")  ;
     end if;
@@ -144,12 +145,14 @@ BEGIN
 									from 
 										chart_of_accounts t0
 									left join
-										(select t0.account_id_header account_id,t3.opening,sum(debet) debet,sum(credit) credit, ifnull(t3.opening,0) + sum(debet)-sum(credit) balance 
+										(select t0.account_id_header account_id,t3.opening,sum(debet) debet,sum(credit) credit, ifnull(t3.opening,0) + sum(debet)-sum(credit) balance,sum(open) open,sum(unposted) unposted,sum(posted) posted
 											from petty_cash t0 
 												left join (select id,name_coa account_name_header,code_coa account_code_header from chart_of_accounts) t1 on t1.id = t0.account_id_header
 												left join (select id,name_coa account_name,code_coa account_code from chart_of_accounts) t2 on t2.id = t0.account_id
 												left join (select account_id_header account_id,sum(debet)-sum(credit) opening from petty_cash where deleted_at is null  and period < ",periodSet1,"  group by account_id_header) t3 on t3.account_id = t0.account_id_header
-												left join (select id,status_id,case when status_id = 1 then 'Approved' else 'Open' end status_desc,case when status_gl_id = 1 then 'Posted' else 'Open' end status_gl_desc from petty_cash_header where deleted_at is null) t4 on t4.id = t0.voucher_id
+												left join (select id,status_id,case when status_id = 1 then 'Approved' else 'Open' end status_desc,case when status_gl_id = 1 then 'Posted' else 'Open' end status_gl_desc,case when status_id = 0 then 1 else 0 end open,case when status_id = 1 and status_gl_id = 0 then 1 else 0 end unposted, 
+																case when status_gl_id = 1 then 1 else 0 end posted
+                                                            from petty_cash_header where deleted_at is null) t4 on t4.id = t0.voucher_id
 											where 
 												deleted_at is null ",theDateSet,receiptStatusSet,keywordSet,voucherIdSet,"
 											group by t0.account_id_header,t3.opening) t1 on t1.account_id = t0.id

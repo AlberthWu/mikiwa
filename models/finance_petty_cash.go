@@ -44,6 +44,7 @@ type (
 		UpdatedBy       string    `json:"updated_by" orm:"column(updated_by)"`
 		DeletedBy       string    `json:"deleted_by" orm:"column(deleted_by)"`
 	}
+
 	PettyCash struct {
 		Id                int       `json:"id" orm:"column(id);auto;pk"`
 		VoucherId         int       `json:"voucher_id"  orm:"column(voucher_id)"`
@@ -156,7 +157,7 @@ func (t *PettyCashHeader) InsertWithDetail(m PettyCashHeader, d []PettyCash) (da
 
 	_, err = o.InsertMulti(len(d), d)
 	if err != nil {
-		o.Raw("update petty_cash set deleted_at = now(),deleted_by = 'Failed' where id = " + utils.Int2String(m.Id)).Exec()
+		o.Raw("update petty_cash_header set deleted_at = now(),deleted_by = 'Failed' where id = " + utils.Int2String(m.Id)).Exec()
 		return nil, err
 	}
 
@@ -238,13 +239,6 @@ type (
 		AccountId        int                    `json:"account_id"`
 		AccountCode      string                 `json:"account_code"`
 		AccountName      string                 `json:"account_name"`
-		AccountTypeId    int                    `json:"account_type_id"`
-		AccountTypeName  string                 `json:"account_type_name"`
-		LevelNo          int                    `json:"level_no"`
-		ParentId         int                    `json:"parent_id"`
-		ParentCode       string                 `json:"parent_code"`
-		ParentName       string                 `json:"parent_name"`
-		JournalPosition  string                 `json:"journal_position"`
 		CodeIn           string                 `json:"code_in"`
 		CodeOut          string                 `json:"code_out"`
 		VoucherSeqNo     int                    `json:"voucher_seq_no"`
@@ -258,7 +252,6 @@ type (
 		StatusId         int8                   `json:"status_id"`
 		StatusGlId       int8                   `json:"status_gl_id"`
 		Memo             string                 `json:"memo"`
-		IsHeader         int                    `json:"is_header"`
 		FieldKey         string                 `json:"field_key"`
 		FieldLabel       string                 `json:"field_label"`
 		FieldInt         string                 `json:"field_int"`
@@ -266,6 +259,8 @@ type (
 		FieldFooter      string                 `json:"field_footer"`
 		FieldExport      string                 `json:"field_export"`
 		FieldExportLabel string                 `json:"field_export_label"`
+		ApproveButton    int8                   `json:"approve_button"`
+		RejectButton     int8                   `json:"reject_button"`
 		DetailList       []PettyCashVoucherJson `json:"detail_list"`
 	}
 
@@ -305,6 +300,8 @@ type (
 		FieldFooter      string                 `json:"field_footer"`
 		FieldExport      string                 `json:"field_export"`
 		FieldExportLabel string                 `json:"field_export_label"`
+		ApproveButton    int8                   `json:"approve_button"`
+		RejectButton     int8                   `json:"reject_button"`
 		DetailList       []PettyCashVoucherJson `json:"detail_list"`
 		Document         []DocumentRtn          `json:"document"`
 	}
@@ -388,35 +385,43 @@ type (
 		VoucherNo   string `json:"voucher_no"`
 		VoucherCode string `json:"voucher_code"`
 	}
+
+	vCount struct {
+		Data0    int `json:"data0"`
+		Open     int `json:"open"`
+		Unposted int `json:"unposted"`
+		Posted   int `json:"posted"`
+		Total    int `json:"total"`
+	}
 )
 
-func (t *PettyCashHeader) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, search_detail, report_Type int, account_id, is_transaction int, status string, thedate, thedate2, updated_at *string) (u utils.PageDynamic, err error) {
+func (t *PettyCashHeader) GetAll(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, search_detail, report_Type int, company_id, account_id, is_transaction int, status string, thedate, thedate2, updated_at *string) (u utils.PageDynamicAdd, err error) {
 	o := orm.NewOrm()
 	var m []orm.Params
-	var c int
 
-	o.Raw("call sp_PettyCashCountV2(?,?,?,null,"+utils.Int2String(account_id)+","+utils.Int2String(is_transaction)+",'"+status+"',"+utils.Int2String(user_id)+","+utils.Int2String(report_Type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &thedate, &thedate2, &updated_at).QueryRow(&c)
+	var dataCount vCount
 
-	if allsize == 1 && c > 0 {
-		size = c
+	o.Raw("call sp_PettyCashCountV2(?,?,?,null,"+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(is_transaction)+",'"+status+"',"+utils.Int2String(user_id)+","+utils.Int2String(report_Type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',null,null)", &thedate, &thedate2, &updated_at).QueryRow(&dataCount)
+
+	if allsize == 1 && dataCount.Data0 > 0 {
+		size = dataCount.Data0
 	}
-	_, err = o.Raw("call sp_PettyCashV2(?,?,?,null,"+utils.Int2String(account_id)+","+utils.Int2String(is_transaction)+",'"+status+"',"+utils.Int2String(user_id)+","+utils.Int2String(report_Type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &thedate, &thedate2, &updated_at).Values(&m)
-
-	if c == 0 && err == nil {
+	_, err = o.Raw("call sp_PettyCashV2(?,?,?,null,"+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(is_transaction)+",'"+status+"',"+utils.Int2String(user_id)+","+utils.Int2String(report_Type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &thedate, &thedate2, &updated_at).Values(&m)
+	if dataCount.Data0 == 0 && err == nil {
 		err = orm.ErrNoRows
-		return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
+		return utils.PaginationDynamicAdd(dataCount.Data0, p, size, "", "", "", "", "", "", "", m, nil), err
 	} else if err != nil {
-		return utils.PaginationDynamic(int(c), p, size, "", "", "", "", "", "", "", m), err
+		return utils.PaginationDynamicAdd(dataCount.Data0, p, size, "", "", "", "", "", "", "", m, nil), err
 	}
-	return utils.PaginationDynamic(int(c), p, size, fmt.Sprintf("%v", m[0]["field_key"]), fmt.Sprintf("%v", m[0]["field_label"]), fmt.Sprintf("%v", m[0]["field_int"]), fmt.Sprintf("%v", m[0]["field_level"]), fmt.Sprintf("%v", m[0]["field_export"]), fmt.Sprintf("%v", m[0]["field_export_label"]), fmt.Sprintf("%v", m[0]["field_footer"]), m), err
+	return utils.PaginationDynamicAdd(dataCount.Data0, p, size, fmt.Sprintf("%v", m[0]["field_key"]), fmt.Sprintf("%v", m[0]["field_label"]), fmt.Sprintf("%v", m[0]["field_int"]), fmt.Sprintf("%v", m[0]["field_level"]), fmt.Sprintf("%v", m[0]["field_export"]), fmt.Sprintf("%v", m[0]["field_export_label"]), fmt.Sprintf("%v", m[0]["field_footer"]), m, dataCount), err
 }
 
-func (t *PettyCashHeader) GetAllDetail(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, search_detail, report_Type int, account_id, is_transaction int, status string, id, thedate, thedate2, updated_at *string) (m []orm.Params, err error) {
+func (t *PettyCashHeader) GetAllDetail(keyword, field_name, match_mode, value_name string, p, size, allsize, user_id, search_detail, report_Type int, company_id, account_id, is_transaction int, status string, id, thedate, thedate2, updated_at *string) (m []orm.Params, err error) {
 	o := orm.NewOrm()
 	var c int64
-	c, err = o.Raw("call sp_PettyCashV2(?,?,?,?,"+utils.Int2String(account_id)+","+utils.Int2String(is_transaction)+",'"+status+"',"+utils.Int2String(user_id)+","+utils.Int2String(report_Type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &thedate, &thedate2, &updated_at, &id).Values(&m)
+	c, err = o.Raw("call sp_PettyCashV2(?,?,?,?,"+utils.Int2String(company_id)+","+utils.Int2String(account_id)+","+utils.Int2String(is_transaction)+",'"+status+"',"+utils.Int2String(user_id)+","+utils.Int2String(report_Type)+",'"+keyword+"',"+utils.Int2String(search_detail)+",'"+field_name+"','"+match_mode+"','"+value_name+"',"+utils.Int2String(size)+", "+utils.Int2String((p-1)*size)+")", &thedate, &thedate2, &updated_at, &id).Values(&m)
 	if c == 0 && err == nil {
-		if _, err = o.Raw("call sp_PettyCashV2(null,null,null,0,null,null,null,null,0,'',null,null,null,null,null, null)").Values(&m); err == nil {
+		if _, err = o.Raw("call sp_PettyCashV2(null,null,null,0,null,null,null,null,null,null,null,null,0,null,null,null,null,null,null,null, null)").Values(&m); err == nil {
 			err = orm.ErrNoRows
 		}
 	}
@@ -428,11 +433,10 @@ func (t *PettyCashHeader) GetById(id, user_id int) (m *PettyCashRtnJson, err err
 	var v PettyCashHeader
 
 	var querydata PettyCashRtn
-	err = o.Raw("call sp_PettyCashOne(" + utils.Int2String(id) + ")").QueryRow(&querydata)
+	err = o.Raw("call sp_PettyCashOne(" + utils.Int2String(id) + "," + utils.Int2String(user_id) + ")").QueryRow(&querydata)
 
 	var companyrtn = CompanyListRtnJson{Id: querydata.CompanyId, Code: querydata.CompanyCode, Name: querydata.CompanyName, Status: querydata.CompanyStatus}
-	var coartn = CoaRtnJson{Id: querydata.AccountId, EffectiveDate: querydata.EffectiveDate, ExpiredDate: querydata.Expired_Date, AccountTypeId: querydata.AccountTypeId, AccountTypeName: querydata.AccountTypeName, LevelNo: querydata.LevelNo,
-		ParentId: querydata.ParentId, ParentCode: querydata.ParentCode, ParentName: querydata.ParentName, JournalPosition: querydata.JournalPosition, CodeCoa: querydata.AccountCode, NameCoa: querydata.AccountName, CodeIn: querydata.CodeIn, CodeOut: querydata.CodeOut, IsHeader: int8(querydata.IsHeader)}
+	var coartn = CoaRtnJson{Id: querydata.AccountId, EffectiveDate: querydata.EffectiveDate, ExpiredDate: querydata.Expired_Date, CodeCoa: querydata.AccountCode, NameCoa: querydata.AccountName, CodeIn: querydata.CodeIn, CodeOut: querydata.CodeOut}
 	dlist, _ := v.GetByIdVoucher(querydata.Id)
 	var td Document
 	ilist := td.GetDocument(id, "petty_cash")
@@ -457,6 +461,8 @@ func (t *PettyCashHeader) GetById(id, user_id int) (m *PettyCashRtnJson, err err
 		FieldFooter:      querydata.FieldFooter,
 		FieldExport:      querydata.FieldExport,
 		FieldExportLabel: querydata.FieldExportLabel,
+		ApproveButton:    querydata.ApproveButton,
+		RejectButton:     querydata.RejectButton,
 		DetailList:       dlist,
 		Document:         ilist,
 	}

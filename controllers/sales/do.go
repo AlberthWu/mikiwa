@@ -415,7 +415,7 @@ func (c *DoController) Post() {
 		c.ServeJSON()
 		return
 	} else {
-		if err = base.PostFirebaseRaw(ob.UploadFile, user_name, d.Id, folderName+"/"+utils.Int2String(d.Id), folderName+"/"+utils.Int2String(d.Id)); err != nil {
+		if err = base.PostFirebaseRaw(ob.UploadFile, user_name, d.Id, folderName+"/"+utils.Int2String(d.Id), folderName+"/"+utils.Int2String(d.Id), folderName); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprint("Error processing data and uploading to Firebase: ", err.Error()))
 		} else {
@@ -877,7 +877,7 @@ func (c *DoController) Put() {
 		c.ServeJSON()
 		return
 	} else {
-		if err = base.PutFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id)); err != nil {
+		if err = base.PutFirebaseRaw(ob.UploadFile, user_name, id, folderName+"/"+utils.Int2String(id), folderName+"/"+utils.Int2String(id), folderName); err != nil {
 			c.Ctx.ResponseWriter.WriteHeader(401)
 			utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprint("Error processing data and uploading to Firebase: ", err.Error()))
 		} else {
