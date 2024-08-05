@@ -192,7 +192,7 @@ func (t *Do) UpdateWithDetail(m Do, data_post, data_put []DoDetail, user_name st
 	}
 
 	joinId = strings.Join(deleteIds, ",")
-	_, err = o.Raw("update do_detail set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and do_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
+	_, err = tx.Raw("update do_detail set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and do_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to delete existing details: %v", err)

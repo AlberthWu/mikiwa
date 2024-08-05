@@ -195,7 +195,7 @@ func (t *PettyCashHeader) UpdateWithDetail(m PettyCashHeader, data_post, data_pu
 	} else {
 		joinId = strings.Join(deleteIds, ",")
 	}
-	_, err = o.Raw("update petty_cash set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and voucher_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
+	_, err = tx.Raw("update petty_cash set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and voucher_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to delete existing details: %v", err)

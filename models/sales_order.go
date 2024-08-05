@@ -193,7 +193,7 @@ func (t *SalesOrder) UpdateWithDetail(m SalesOrder, data_post, data_put []SalesO
 	} else {
 		joinId = strings.Join(deleteIds, ",")
 	}
-	_, err = o.Raw("update sales_order_detail set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and sales_order_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
+	_, err = tx.Raw("update sales_order_detail set deleted_at = now(), deleted_by = '" + user_name + "' where deleted_at is null and sales_order_id = " + utils.Int2String(m.Id) + " and id not in (" + joinId + ") ").Exec()
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to delete existing details: %v", err)
