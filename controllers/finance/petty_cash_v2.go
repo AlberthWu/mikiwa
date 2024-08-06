@@ -100,6 +100,8 @@ func (c *PettyCashV2Controller) Post() {
 		return
 	}
 
+	ob.CompanyId = 1
+
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")
 	valid.Required(ob.AccountId, "account_id").Message("Is required")
