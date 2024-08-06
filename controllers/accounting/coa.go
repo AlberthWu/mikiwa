@@ -59,7 +59,7 @@ func (c *CoaController) Post() {
 
 	valid := validation.Validation{}
 	valid.Required(effective_date, "effective_date").Message("is required")
-	valid.Required(company_id, "company_id").Message("is required")
+	// valid.Required(company_id, "company_id").Message("is required")
 	valid.Required(code_coa, "code_coa").Message("is required")
 	valid.Required(name_coa, "name_coa").Message("is required")
 	// valid.Required(sales_type_id, "sales_type_id").Message("is required")
@@ -288,7 +288,7 @@ func (c *CoaController) Put() {
 
 	valid := validation.Validation{}
 	valid.Required(effective_date, "effective_date").Message("is required")
-	valid.Required(company_id, "company_id").Message("is required")
+	// valid.Required(company_id, "company_id").Message("is required")
 	valid.Required(code_coa, "code_coa").Message("is required")
 	valid.Required(name_coa, "name_coa").Message("is required")
 	// valid.Required(sales_type_id, "sales_type_id").Message("is required")
