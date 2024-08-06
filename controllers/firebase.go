@@ -102,7 +102,7 @@ func PostFilesToFirebase(files []*multipart.FileHeader, userName string, Referen
 		pathName = strings.Replace(pathName, "/", "%2F", -1)
 		newObjectNamePath := pathName + "%2F" + fileName
 
-		downloadURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "sampurnagroupapp.appspot.com", newObjectNamePath, fileName)
+		downloadURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "mpwdb-9c2d8.appspot.com", newObjectNamePath, fileName)
 
 		t_documents := models.Document{
 			ReferenceId: ReferenceId,
@@ -327,7 +327,7 @@ func PostFirebaseRaw(rawData models.DocumentList, userName string, ReferenceId i
 		pathName = strings.Replace(pathName, "/", "%2F", -1)
 		newObjectNamePath := pathName + "%2F" + fileName
 
-		objectURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "sampurnagroupapp.appspot.com", newObjectNamePath, fileName)
+		objectURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "mpwdb-9c2d8.appspot.com", newObjectNamePath, fileName)
 
 		rawData.File[i].ObjectURL = objectURL
 
@@ -484,7 +484,7 @@ func PostFirebaseRawOne(rawData models.FirebaseFile, userName string, ReferenceI
 	pathName = strings.Replace(pathName, "/", "%2F", -1)
 	newObjectNamePath := pathName + "%2F" + fileName
 
-	objectURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "sampurnagroupapp.appspot.com", newObjectNamePath, fileName)
+	objectURL := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", "mpwdb-9c2d8.appspot.com", newObjectNamePath, fileName)
 
 	// rawData.ObjectURL = objectURL
 
