@@ -57,9 +57,11 @@ func (c *CoaController) Post() {
 	is_header, _ := c.GetInt8("is_header")
 	// sales_type_id := strings.TrimSpace(c.GetString("sales_type_id"))
 
+	company_id = 1
+
 	valid := validation.Validation{}
 	valid.Required(effective_date, "effective_date").Message("is required")
-	// valid.Required(company_id, "company_id").Message("is required")
+	valid.Required(company_id, "company_id").Message("is required")
 	valid.Required(code_coa, "code_coa").Message("is required")
 	valid.Required(name_coa, "name_coa").Message("is required")
 	// valid.Required(sales_type_id, "sales_type_id").Message("is required")
@@ -286,9 +288,11 @@ func (c *CoaController) Put() {
 		return
 	}
 
+	company_id = 1
+
 	valid := validation.Validation{}
 	valid.Required(effective_date, "effective_date").Message("is required")
-	// valid.Required(company_id, "company_id").Message("is required")
+	valid.Required(company_id, "company_id").Message("is required")
 	valid.Required(code_coa, "code_coa").Message("is required")
 	valid.Required(name_coa, "name_coa").Message("is required")
 	// valid.Required(sales_type_id, "sales_type_id").Message("is required")
@@ -529,7 +533,7 @@ func (c *CoaController) GetAll() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
-	user_id = 1
+
 	var issuedate, updatedat *string
 
 	currentPage, _ := c.GetInt("page")
@@ -585,7 +589,7 @@ func (c *CoaController) GetAllLimit() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
-	user_id = 1
+
 	keyword := strings.TrimSpace(c.GetString("keyword"))
 	account_type_id, _ := c.GetInt("account_type_id")
 	level_no, _ := c.GetInt("level_no")
@@ -615,7 +619,7 @@ func (c *CoaController) GetAllLimiChildByCompany() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
-	user_id = 1
+
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	fmt.Println(id)
 	issue_date := strings.TrimSpace(c.GetString("issue_date"))
@@ -648,7 +652,6 @@ func (c *CoaController) GetAllLimiChildByCompanyAssets() {
 	if sess != nil {
 		user_id = sess.(map[string]interface{})["id"].(int)
 	}
-	user_id = 1
 
 	id, _ := strconv.Atoi(c.Ctx.Input.Param(":id"))
 	fmt.Println(id)
