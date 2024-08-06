@@ -156,7 +156,7 @@ func (t *Do) InsertWithDetail(m Do, d []DoDetail) (data *Do, err error) {
 		d[i].DoId = m.Id
 	}
 
-	_, err = tx.InsertMulti(len(d), d)
+	_, err = o.InsertMulti(len(d), d)
 	if err != nil {
 		o.Raw("update dos set deleted_at = now(),deleted_by = 'Failed' where id = " + utils.Int2String(m.Id)).Exec()
 		return nil, err
