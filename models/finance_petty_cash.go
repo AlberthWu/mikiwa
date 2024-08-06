@@ -207,7 +207,7 @@ func (t *PettyCashHeader) UpdateWithDetail(m PettyCashHeader, data_post, data_pu
 	}
 
 	if len(data_post) > 0 {
-		_, err = o.InsertMulti(len(data_post), data_post)
+		_, err = tx.InsertMulti(len(data_post), data_post)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("failed to insert new details: %v", err)

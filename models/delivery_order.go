@@ -156,7 +156,7 @@ func (t *Do) InsertWithDetail(m Do, d []DoDetail) (data *Do, err error) {
 		d[i].DoId = m.Id
 	}
 
-	_, err = o.InsertMulti(len(d), d)
+	_, err = tx.InsertMulti(len(d), d)
 	if err != nil {
 		o.Raw("update dos set deleted_at = now(),deleted_by = 'Failed' where id = " + utils.Int2String(m.Id)).Exec()
 		return nil, err
@@ -204,7 +204,7 @@ func (t *Do) UpdateWithDetail(m Do, data_post, data_put []DoDetail, user_name st
 	}
 
 	if len(data_post) > 0 {
-		_, err = o.InsertMulti(len(data_post), data_post)
+		_, err = tx.InsertMulti(len(data_post), data_post)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("failed to insert new details: %v", err)
