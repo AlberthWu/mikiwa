@@ -111,7 +111,7 @@ func (c *PettyCashV2Controller) Post() {
 		valid.AddError("detail", "Detail list is required")
 	}
 
-	if utils.ToUpper(ob.TransactionType) != "IN" && utils.ToUpper(ob.TransactionType) != "OUT" {
+	if utils.ToUpper(ob.TransactionType) != "MASUK" && utils.ToUpper(ob.TransactionType) != "KELUAR" && utils.ToUpper(ob.TransactionType) != "IN" && utils.ToUpper(ob.TransactionType) != "OUT" {
 		valid.AddError("transaction_type", "Invalid transaction type")
 	}
 
@@ -497,7 +497,7 @@ func (c *PettyCashV2Controller) Put() {
 		valid.AddError("detail", "Detail list is required")
 	}
 
-	if utils.ToUpper(ob.TransactionType) != "IN" && utils.ToUpper(ob.TransactionType) != "OUT" {
+	if utils.ToUpper(ob.TransactionType) != "MASUK" && utils.ToUpper(ob.TransactionType) != "MASUK" && utils.ToUpper(ob.TransactionType) != "IN" && utils.ToUpper(ob.TransactionType) != "OUT" {
 		valid.AddError("transaction_type", "Invalid transaction type")
 	}
 
