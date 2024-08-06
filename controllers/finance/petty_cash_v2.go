@@ -251,9 +251,9 @@ func (c *PettyCashV2Controller) Post() {
 		return
 	}
 
-	if utils.ToUpper(ob.TransactionType) == "IN" {
+	if utils.ToUpper(ob.TransactionType) == "IN" || utils.ToUpper(ob.TransactionType) == "MASUK" {
 		voucher_code = coa.CodeIn
-	} else if utils.ToUpper(ob.TransactionType) == "OUT" {
+	} else if utils.ToUpper(ob.TransactionType) == "OUT" || utils.ToUpper(ob.TransactionType) == "KELUAR" {
 		voucher_code = coa.CodeOut
 	}
 
