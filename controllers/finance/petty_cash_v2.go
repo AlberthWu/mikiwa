@@ -470,7 +470,7 @@ func (c *PettyCashV2Controller) Put() {
 
 	if querydata.StatusId == 0 && !app_aut && close_aut {
 		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has not been APPROVE", querydata.VoucherNo))
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has not been VERIFIED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
@@ -525,7 +525,7 @@ func (c *PettyCashV2Controller) Put() {
 		valid.AddError("detail", "Detail list is required")
 	}
 
-	if utils.ToUpper(ob.TransactionType) != "MASUK" && utils.ToUpper(ob.TransactionType) != "MASUK" && utils.ToUpper(ob.TransactionType) != "IN" && utils.ToUpper(ob.TransactionType) != "OUT" {
+	if utils.ToUpper(ob.TransactionType) != "MASUK" && utils.ToUpper(ob.TransactionType) != "KELUAR" && utils.ToUpper(ob.TransactionType) != "IN" && utils.ToUpper(ob.TransactionType) != "OUT" {
 		valid.AddError("transaction_type", "Invalid transaction type")
 	}
 
