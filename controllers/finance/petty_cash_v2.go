@@ -33,6 +33,7 @@ type (
 		VoucherNo       string                 `json:"voucher_no"`
 		Pic             string                 `json:"pic"`
 		Memo            string                 `json:"memo"`
+		StatusIds       string                 `json:"status_ids"`
 		UploadFile      models.DocumentList    `json:"upload_file"`
 		Detail          []InputDetailPettyCash `json:"detail"`
 	}
@@ -69,7 +70,7 @@ func (c *PettyCashV2Controller) Post() {
 	var err error
 	var folderName string = "petty_cash"
 	var num, voucher_seq_no int = 0, 0
-	var status_id int8 = 0
+	var status_id, status_gl_id int8 = 0, 0
 	var reference_no, voucher_code, period, batch_no string
 	sess := c.GetSession("profile")
 	if sess != nil {
@@ -80,6 +81,8 @@ func (c *PettyCashV2Controller) Post() {
 	form_id = base.FormName(form_petty_cash)
 	write_aut := models.CheckPrivileges(user_id, form_id, base.Write)
 	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
+	app_aut := models.CheckPrivileges(user_id, form_id, base.Pending)
+	close_aut := models.CheckPrivileges(user_id, form_id, base.Approval)
 	if !write_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
 		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Post not authorize", map[string]interface{}{"message": "Please contact administrator"})
@@ -274,6 +277,22 @@ func (c *PettyCashV2Controller) Post() {
 		voucher_seq_no = num
 	}
 
+	if ob.StatusIds == "1" {
+		if close_aut && app_aut {
+			status_id = 1
+			status_gl_id = 1
+		} else if close_aut && !app_aut {
+			status_id = 0
+			status_gl_id = 0
+		} else if app_aut {
+			status_id = 1
+			status_gl_id = 0
+		} else {
+			status_gl_id = 0
+			status_id = 0
+		}
+	}
+
 	t_pettycashh = models.PettyCashHeader{
 		IssueDate:       thedate,
 		CompanyId:       ob.CompanyId,
@@ -293,7 +312,7 @@ func (c *PettyCashV2Controller) Post() {
 		Pic:             ob.Pic,
 		Memo:            ob.Memo,
 		StatusId:        status_id,
-		StatusGlId:      status_id,
+		StatusGlId:      status_gl_id,
 		CreatedBy:       user_name,
 		UpdatedBy:       user_name,
 	}
@@ -328,7 +347,7 @@ func (c *PettyCashV2Controller) Post() {
 					TransactionType:   ob.TransactionType,
 					Period:            utils.String2Int(period),
 					StatusId:          status_id,
-					StatusGlId:        status_id,
+					StatusGlId:        status_gl_id,
 					CreatedBy:         user_name,
 					UpdatedBy:         user_name,
 				})
@@ -372,6 +391,7 @@ func (c *PettyCashV2Controller) Put() {
 	var err error
 	var folderName string = "petty_cash"
 	var num int = 0
+	var status_id, status_gl_id int8 = 0, 0
 	var reference_no, voucher_code, period, deletedatData, batch_no string
 	sess := c.GetSession("profile")
 	if sess != nil {
@@ -448,16 +468,23 @@ func (c *PettyCashV2Controller) Put() {
 		return
 	}
 
-	if querydata.StatusGlId == 1 && !close_aut {
+	if querydata.StatusId == 0 && !app_aut && close_aut {
 		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has not been APPROVE", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
 
-	if querydata.StatusId == 1 && !app_aut {
+	if querydata.StatusId == 1 && !app_aut && !close_aut {
 		c.Ctx.ResponseWriter.WriteHeader(401)
 		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v' has been APPROVED", querydata.VoucherNo))
+		c.ServeJSON()
+		return
+	}
+
+	if querydata.StatusGlId == 1 && !close_aut {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
@@ -657,6 +684,39 @@ func (c *PettyCashV2Controller) Put() {
 	reference_no = querydata.VoucherNo
 	batch_no = string(thedate.Format("200601")) + reference_no
 
+	if ob.StatusIds == "1" {
+		if close_aut && app_aut {
+			status_id = 1
+			status_gl_id = 1
+		} else if close_aut {
+			status_id = querydata.StatusId
+			status_gl_id = 1
+		} else if app_aut {
+			status_id = 1
+			status_gl_id = querydata.StatusGlId
+		} else {
+			status_gl_id = querydata.StatusGlId
+			status_id = querydata.StatusId
+		}
+	} else if ob.StatusIds == "0" {
+		if close_aut && app_aut {
+			status_id = 0
+			status_gl_id = 0
+		} else if close_aut {
+			status_id = querydata.StatusId
+			status_gl_id = 0
+		} else if app_aut {
+			status_id = 0
+			status_gl_id = querydata.StatusGlId
+		} else {
+			status_gl_id = querydata.StatusGlId
+			status_id = querydata.StatusId
+		}
+	} else {
+		status_id = querydata.StatusId
+		status_gl_id = querydata.StatusGlId
+	}
+
 	t_pettycashh.Id = id
 	t_pettycashh.IssueDate = thedate
 	t_pettycashh.CompanyId = querydata.CompanyId
@@ -681,8 +741,8 @@ func (c *PettyCashV2Controller) Put() {
 	t_pettycashh.LoanId = querydata.LoanId
 	t_pettycashh.LoanReferenceNo = querydata.LoanReferenceNo
 	t_pettycashh.Period = utils.String2Int(period)
-	t_pettycashh.StatusId = querydata.StatusId
-	t_pettycashh.StatusGlId = querydata.StatusGlId
+	t_pettycashh.StatusId = status_id
+	t_pettycashh.StatusGlId = status_gl_id
 	t_pettycashh.CreatedBy = querydata.CreatedBy
 	t_pettycashh.UpdatedBy = user_name
 
@@ -715,8 +775,8 @@ func (c *PettyCashV2Controller) Put() {
 					Memo:              v.Memo,
 					TransactionType:   ob.TransactionType,
 					Period:            utils.String2Int(period),
-					StatusId:          querydata.StatusId,
-					StatusGlId:        querydata.StatusGlId,
+					StatusId:          status_id,
+					StatusGlId:        status_gl_id,
 					BatchNo:           batch_no,
 					CreatedBy:         user_name,
 					UpdatedBy:         user_name,
@@ -752,8 +812,8 @@ func (c *PettyCashV2Controller) Put() {
 					LoanReferenceNo:   querydata.LoanReferenceNo,
 					TransactionType:   ob.TransactionType,
 					Period:            utils.String2Int(period),
-					StatusId:          querydata.StatusId,
-					StatusGlId:        querydata.StatusGlId,
+					StatusId:          status_id,
+					StatusGlId:        status_gl_id,
 					BatchNo:           batch_no,
 					CreatedBy:         v.CreatedBy,
 					UpdatedBy:         user_name,
