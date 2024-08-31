@@ -95,7 +95,7 @@ func (c *SalesOrderController) Post() {
 	valid.Required(ob.LeadTime, "lead_time").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 	valid.Required(ob.EmployeeId, "employee_id").Message("Is required")
-	valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
+	// valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
 	valid.Required(ob.OutletId, "outlet_id").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.DeliveryAddress), "delivery_address").Message("Is required")
 
@@ -186,28 +186,30 @@ func (c *SalesOrderController) Post() {
 	}
 
 	var transporter models.Company
-	err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
-	if err == orm.ErrNoRows {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, "Transporter unregistered/Illegal data")
-		c.ServeJSON()
-		return
-	}
+	if ob.TransporterId > 0 {
 
-	if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
-		c.ServeJSON()
-		return
-	}
+		err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
+		if err == orm.ErrNoRows {
+			c.Ctx.ResponseWriter.WriteHeader(401)
+			utils.ReturnHTTPError(&c.Controller, 401, "Transporter unregistered/Illegal data")
+			c.ServeJSON()
+			return
+		}
 
-	if transporter.Status == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
-		c.ServeJSON()
-		return
-	}
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(401)
+			utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+			c.ServeJSON()
+			return
+		}
 
+		if transporter.Status == 0 {
+			c.Ctx.ResponseWriter.WriteHeader(402)
+			utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
+			c.ServeJSON()
+			return
+		}
+	}
 	var products models.Product
 	var productUom models.ProductUom
 	var priceRtn *models.ProductConversionRtnJson
@@ -553,7 +555,7 @@ func (c *SalesOrderController) Put() {
 	valid.Required(ob.LeadTime, "lead_time").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 	valid.Required(ob.EmployeeId, "employee_id").Message("Is required")
-	valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
+	// valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
 	valid.Required(ob.OutletId, "outlet_id").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.DeliveryAddress), "delivery_address").Message("Is required")
 
@@ -644,26 +646,29 @@ func (c *SalesOrderController) Put() {
 	}
 
 	var transporter models.Company
-	err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
-	if err == orm.ErrNoRows {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, "Transporter unregistered/Illegal data")
-		c.ServeJSON()
-		return
-	}
+	if ob.TransporterId > 0 {
 
-	if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
-		c.ServeJSON()
-		return
-	}
+		err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
+		if err == orm.ErrNoRows {
+			c.Ctx.ResponseWriter.WriteHeader(401)
+			utils.ReturnHTTPError(&c.Controller, 401, "Transporter unregistered/Illegal data")
+			c.ServeJSON()
+			return
+		}
 
-	if transporter.Status == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
-		c.ServeJSON()
-		return
+		if err != nil {
+			c.Ctx.ResponseWriter.WriteHeader(401)
+			utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+			c.ServeJSON()
+			return
+		}
+
+		if transporter.Status == 0 {
+			c.Ctx.ResponseWriter.WriteHeader(402)
+			utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
+			c.ServeJSON()
+			return
+		}
 	}
 
 	var querydetail models.SalesOrderDetail

@@ -88,7 +88,7 @@ func init() {
 
 	beego.Router("/v1/accounting/coa/list", &accounting.CoaController{}, "get:GetAllLimit")
 	beego.Router("/v1/accounting/coa/list/:id", &accounting.CoaController{}, "get:GetAllLimiChildByCompany")
-	beego.Router("/v1/accounting/coa/list/assets/:id", &accounting.CoaController{}, "get:GetAllLimiChildByCompanyAssets")
+	beego.Router("/v1/accounting/coa/list/assets/:id", &accounting.CoaController{}, "get:GetAllLimiChildByCompanyAssets") // coa list header
 	beego.Router("/v1/accounting/coa", &accounting.CoaController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/accounting/coa/:id", &accounting.CoaController{}, "put:Put;get:GetOne;delete:Delete")
 
