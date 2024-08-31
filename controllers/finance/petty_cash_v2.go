@@ -162,22 +162,22 @@ func (c *PettyCashV2Controller) Post() {
 	}
 
 	if coa.UserId != user_id {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your account", coa.CodeCoa))
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error '%v' is not your account", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
 
 	if coa.StatusId == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error account '%v' has been set as INACTIVE", coa.CodeCoa))
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error account '%v' has been set as INACTIVE", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
 
 	if coa.CompanyId != ob.CompanyId {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code))
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code))
 		c.ServeJSON()
 		return
 	}
@@ -382,6 +382,8 @@ func (c *PettyCashV2Controller) Put() {
 	form_id = base.FormName(form_petty_cash)
 	put_aut := models.CheckPrivileges(user_id, form_id, base.Update)
 	aut_aut := models.CheckPrivileges(user_id, form_id, base.Author)
+	app_aut := models.CheckPrivileges(user_id, form_id, base.Pending)
+	close_aut := models.CheckPrivileges(user_id, form_id, base.Approval)
 
 	if !put_aut {
 		c.Ctx.ResponseWriter.WriteHeader(402)
@@ -409,8 +411,8 @@ func (c *PettyCashV2Controller) Put() {
 	var querydata models.PettyCashHeader
 	err = models.PettyCashHeaders().Filter("id", id).One(&querydata)
 	if err == orm.ErrNoRows {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, "Voucher id unregistered/Illegal data")
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Voucher id unregistered/Illegal data")
 		c.ServeJSON()
 		return
 	}
@@ -424,8 +426,8 @@ func (c *PettyCashV2Controller) Put() {
 
 	deletedatData = querydata.DeletedAt.Format("2006-01-02")
 	if deletedatData != "0001-01-01" {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v' has been deleted", querydata.VoucherNo))
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v' has been deleted", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
@@ -440,48 +442,47 @@ func (c *PettyCashV2Controller) Put() {
 	}
 
 	if thedate.Month() != querydata.IssueDate.Month() || thedate.Year() != querydata.IssueDate.Year() {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, "Allowed changes date part only")
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, "Allowed changes date part only")
 		c.ServeJSON()
 		return
 	}
 
-	if querydata.StatusId == 1 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v' has been APPROVED", querydata.VoucherNo))
+	if querydata.StatusGlId == 1 && !close_aut {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
 
-	if querydata.StatusGlId == 1 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
+	if querydata.StatusId == 1 && !app_aut {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v' has been APPROVED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
 
-	if !aut_aut {
-		if querydata.LoanId > 0 {
-			c.Ctx.ResponseWriter.WriteHeader(402)
-			utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by loan '" + querydata.LoanReferenceNo + "'"})
-			c.ServeJSON()
-			return
-		}
-
-		if querydata.ArId > 0 {
-			c.Ctx.ResponseWriter.WriteHeader(402)
-			utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ar '" + querydata.ArReferenceNo + "'"})
-			c.ServeJSON()
-			return
-		}
-
-		if querydata.ApId > 0 {
-			c.Ctx.ResponseWriter.WriteHeader(402)
-			utils.ReturnHTTPSuccessWithMessage(&c.Controller, 402, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ap '" + querydata.ApReferenceNo + "'"})
-			c.ServeJSON()
-			return
-		}
+	if querydata.LoanId > 0 {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 401, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by loan '" + querydata.LoanReferenceNo + "'"})
+		c.ServeJSON()
+		return
 	}
+
+	if querydata.ArId > 0 {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 401, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ar '" + querydata.ArReferenceNo + "'"})
+		c.ServeJSON()
+		return
+	}
+
+	if querydata.ApId > 0 {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, 401, "Unable to edit", map[string]interface{}{"id": "'" + querydata.VoucherNo + "' has been CLAIM by ap '" + querydata.ApReferenceNo + "'"})
+		c.ServeJSON()
+		return
+	}
+
 	ob.CompanyId = querydata.CompanyId
 	ob.TransactionType = querydata.TransactionType
 	ob.AccountId = querydata.AccountId
@@ -549,22 +550,22 @@ func (c *PettyCashV2Controller) Put() {
 	}
 
 	if coa.UserId != user_id {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' is not your account", coa.CodeCoa))
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error '%v' is not your account", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
 
 	if coa.StatusId == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", coa.CodeCoa))
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error '%v' has been set as INACTIVE", coa.CodeCoa))
 		c.ServeJSON()
 		return
 	}
 
 	if coa.CompanyId != ob.CompanyId {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code))
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("Error account '%v' is not under company '%s'", coa.CodeCoa, companies.Code))
 		c.ServeJSON()
 		return
 	}
