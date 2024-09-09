@@ -475,16 +475,16 @@ func (c *PettyCashV2Controller) Put() {
 		return
 	}
 
-	if querydata.StatusId == 1 && !app_aut && !close_aut {
+	if querydata.StatusGlId == 1 && !close_aut {
 		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v' has been APPROVED", querydata.VoucherNo))
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
 
-	if querydata.StatusGlId == 1 && !close_aut {
+	if querydata.StatusId == 1 && !app_aut && !close_aut {
 		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
+		utils.ReturnHTTPError(&c.Controller, 401, fmt.Sprintf("'%v' has been APPROVED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
@@ -886,16 +886,16 @@ func (c *PettyCashV2Controller) Delete() {
 		return
 	}
 
-	if querydata.StatusId == 1 {
+	if querydata.StatusGlId == 1 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v' has been APPROVED", querydata.VoucherNo))
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
 
-	if querydata.StatusGlId == 1 {
+	if querydata.StatusId == 1 {
 		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v'  has been POSTED", querydata.VoucherNo))
+		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("'%v' has been APPROVED", querydata.VoucherNo))
 		c.ServeJSON()
 		return
 	}
