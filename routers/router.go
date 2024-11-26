@@ -155,6 +155,7 @@ func init() {
 	beego.Router("/v1/sales/order", &sales.SalesOrderController{}, "post:Post;get:GetAll")
 	beego.Router("/v1/sales/order/detail", &sales.SalesOrderController{}, "get:GetAllDetail")
 	beego.Router("/v1/sales/order/:id", &sales.SalesOrderController{}, "put:Put;get:GetOne;delete:Delete")
+	beego.Router("/v1/sales/order/list", &sales.SalesOrderController{}, "get:GetAllList")
 	// beego.Router("/v1/sales/order/confirm/:id", &sales.SalesOrderController{}, "put:Put;get:GetOne;delete:Delete")
 
 	// delivery_order

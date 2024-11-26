@@ -1207,3 +1207,22 @@ func (c *SalesOrderController) GetAllDetail() {
 	}
 	c.ServeJSON()
 }
+
+func (c *SalesOrderController) GetAllList() {
+	keyword := strings.TrimSpace(c.GetString("keyword"))
+
+	d, err := t_sales_order.GetAllLimit(keyword)
+	code, message := base.DecodeErr(err)
+
+	if err == orm.ErrNoRows {
+		code = 200
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, "No data")
+	} else if err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(code)
+		utils.ReturnHTTPError(&c.Controller, code, message)
+	} else if err == nil {
+		utils.ReturnHTTPSuccessWithMessage(&c.Controller, code, message, d)
+	}
+	c.ServeJSON()
+}
