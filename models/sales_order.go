@@ -432,11 +432,11 @@ func (c *SalesOrder) GetDetail(id, user_id int) (m []orm.Params) {
 	return m
 }
 
-func (t *SalesOrder) GetAllLimit(keyword string) (m []SalesOrderRtnJson, err error) {
+func (t *SalesOrder) GetAllLimit(keyword string) (m []SalesOrder, err error) {
 	var c int64
 	cond := orm.NewCondition()
 	cond1 := cond.And("reference_no__icontains", keyword).And("deleted_at__isnull", true)
-	qs := SalesOrderDetails().SetCond(cond1)
+	qs := SalesOrders().SetCond(cond1)
 
 	if c, err = qs.All(&m); err != nil {
 		return nil, err
