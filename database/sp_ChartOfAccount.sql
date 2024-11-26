@@ -59,12 +59,13 @@ BEGIN
     SET accountTypeIdSet  = case when (accountTypeId is null or accountTypeId = 0) then '' else concat(" AND t0.account_type_id = ",accountTypeId)   end;
     SET companyIdSet  = case when (companyId is null or companyId = 0) then '' else concat(" AND t0.company_id = ",companyId)   end;
     SET salesTypeIdSet  = '';
+    
     -- SET accountTypeIdSet  = case when (accountTypeId is null or accountTypeId = 0) then '' else  concat(" AND t0.account_type_id in (select id from gl_account_type where component_account = '",accountTypeName,"')")   end;
-    -- set menuId = (select id from sys_menus where form_name = 'chart_of_accounts');
---     set autId = ifnull((select permission_id from sys_role_menu_permission where  menu_id = menuId and permission_id = 6 and role_id in (select role_id from sys_user_role where user_id = userId) limit 1),0);
---     if autId = 0 then
--- 		SET userIdSet  = concat(" and t0.id in (select account_id from sys_user_account where user_id = ",userId,")")  ;
---     end if;
+    set menuId = (select id from sys_menus where form_name = 'chart_of_accounts');
+    set autId = ifnull((select permission_id from sys_role_menu_permission where  menu_id = menuId and permission_id = 6 and role_id in (select role_id from sys_user_role where user_id = userId) limit 1),0);
+    if autId = 0 then
+		SET userIdSet  = concat(" and t0.id in (select account_id from sys_user_account where user_id = ",userId,")")  ;
+    end if;
     
     
 	

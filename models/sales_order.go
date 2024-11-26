@@ -431,3 +431,20 @@ func (c *SalesOrder) GetDetail(id, user_id int) (m []orm.Params) {
 	o.Raw("call sp_SalesOrder(null,null,null," + utils.Int2String(id) + ",null,null,null,0,null,null,null,0," + utils.Int2String(user_id) + ",'',null,null,null,null,null,null)").Values(&m)
 	return m
 }
+
+func (t *SalesOrder) GetAllLimit(keyword string) (m []SalesOrderRtnJson, err error) {
+	var c int64
+	cond := orm.NewCondition()
+	cond1 := cond.And("reference_no__icontains", keyword).And("deleted_at__isnull", true)
+	qs := SalesOrderDetails().SetCond(cond1)
+
+	if c, err = qs.All(&m); err != nil {
+		return nil, err
+	}
+
+	if c == 0 {
+		err = orm.ErrNoRows
+	}
+
+	return m, err
+}
