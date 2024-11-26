@@ -121,8 +121,8 @@ func (c *DoController) Post() {
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")
 	valid.Required(ob.WarehousePlantId, "warehouse_plant_id").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
-	valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
-	valid.Required(ob.PlateNo, "plate_no").Message("Is required")
+	// valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
+	// valid.Required(ob.PlateNo, "plate_no").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.DeliveryAddress), "delivery_address").Message("Is required")
 
 	if len(ob.Detail) == 0 {
@@ -537,8 +537,8 @@ func (c *DoController) Put() {
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")
 	valid.Required(ob.WarehousePlantId, "warehouse_plant_id").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
-	valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
-	valid.Required(ob.PlateNo, "plate_no").Message("Is required")
+	// valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
+	// valid.Required(ob.PlateNo, "plate_no").Message("Is required")
 	valid.Required(strings.TrimSpace(ob.DeliveryAddress), "delivery_address").Message("Is required")
 
 	if len(ob.Detail) == 0 {
