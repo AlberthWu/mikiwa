@@ -119,7 +119,7 @@ func (c *DoController) Post() {
 	ob.CourierId = 1
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")
-	valid.Required(ob.WarehousePlantId, "warehouse_plant_id").Message("Is required")
+	// valid.Required(ob.WarehousePlantId, "warehouse_plant_id").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 	// valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
 	// valid.Required(ob.PlateNo, "plate_no").Message("Is required")
@@ -190,28 +190,28 @@ func (c *DoController) Post() {
 		}
 	}
 
-	// check warehouse
-	var warehouse models.SimplePlantRtnJson
-	if err = o.Raw("select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(ob.WarehousePlantId) + "").QueryRow(&warehouse); err == orm.ErrNoRows {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, "Warehouse unregistered/Illegal data")
-		c.ServeJSON()
-		return
-	}
+	// // check warehouse
+	// var warehouse models.SimplePlantRtnJson
+	// if err = o.Raw("select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(ob.WarehousePlantId) + "").QueryRow(&warehouse); err == orm.ErrNoRows {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, "Warehouse unregistered/Illegal data")
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
-		c.ServeJSON()
-		return
-	}
+	// if err != nil {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if warehouse.Status == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", warehouse.Code))
-		c.ServeJSON()
-		return
-	}
+	// if warehouse.Status == 0 {
+	// 	c.Ctx.ResponseWriter.WriteHeader(402)
+	// 	utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", warehouse.Code))
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
 	// check transporter
 	var transporter models.Company
@@ -333,32 +333,33 @@ func (c *DoController) Post() {
 		return
 	}
 
-	seqno, referenceno := models.GenerateBatchNumber(thedate, warehouse.CompanyId, ob.OutletId, ob.CustomerId, "DeliveryOrder")
+	// seqno, referenceno := models.GenerateBatchNumber(thedate, warehouse.CompanyId, ob.OutletId, ob.CustomerId, "DeliveryOrder")
+	seqno, referenceno := models.GenerateBatchNumber(thedate, 1, ob.OutletId, ob.CustomerId, "DeliveryOrder")
 
 	t_delivery_order = models.Do{
-		SalesOrderId:       ob.SalesOrderId,
-		SalesOrderNo:       so_reference_no,
-		IssueDate:          thedate,
-		ReferenceNo:        referenceno,
-		SeqNo:              seqno,
-		WarehouseId:        warehouse.CompanyId,
-		WarehouseCode:      warehouse.CompanyCode,
-		WarehousePlantId:   ob.WarehousePlantId,
-		WarehousePlantCode: warehouse.Code,
-		CustomerId:         ob.CustomerId,
-		CustomerCode:       customers.Code,
-		PlantId:            ob.PlantId,
-		PlantCode:          plants.Code,
-		DeliveryAddress:    ob.DeliveryAddress,
-		TransporterId:      ob.TransporterId,
-		TransporterCode:    transporter.Code,
-		CourierId:          ob.CourierId,
-		PlateNo:            ob.PlateNo,
-		Notes:              ob.Notes,
-		StatusId:           status_id,
-		StatusDescription:  base.GetStatusDo(int(status_id)),
-		CreatedBy:          user_name,
-		UpdatedBy:          user_name,
+		SalesOrderId: ob.SalesOrderId,
+		SalesOrderNo: so_reference_no,
+		IssueDate:    thedate,
+		ReferenceNo:  referenceno,
+		SeqNo:        seqno,
+		// WarehouseId:        warehouse.CompanyId,
+		// WarehouseCode:      warehouse.CompanyCode,
+		// WarehousePlantId:   ob.WarehousePlantId,
+		// WarehousePlantCode: warehouse.Code,
+		CustomerId:        ob.CustomerId,
+		CustomerCode:      customers.Code,
+		PlantId:           ob.PlantId,
+		PlantCode:         plants.Code,
+		DeliveryAddress:   ob.DeliveryAddress,
+		TransporterId:     ob.TransporterId,
+		TransporterCode:   transporter.Code,
+		CourierId:         ob.CourierId,
+		PlateNo:           ob.PlateNo,
+		Notes:             ob.Notes,
+		StatusId:          status_id,
+		StatusDescription: base.GetStatusDo(int(status_id)),
+		CreatedBy:         user_name,
+		UpdatedBy:         user_name,
 	}
 
 	for k, v := range ob.Detail {
@@ -371,14 +372,14 @@ func (c *DoController) Post() {
 			mutex.Lock()
 			if v.Id == 0 {
 				inputDetail = append(inputDetail, models.DoDetail{
-					SalesOrderId:        ob.SalesOrderId,
-					SalesOrderNo:        so_reference_no,
-					ReferenceNo:         referenceno,
-					IssueDate:           thedate,
-					WarehouseId:         warehouse.CompanyId,
-					WarehouseCode:       warehouse.Code,
-					WarehousePlantId:    ob.WarehousePlantId,
-					WarehousePlantCode:  warehouse.Code,
+					SalesOrderId: ob.SalesOrderId,
+					SalesOrderNo: so_reference_no,
+					ReferenceNo:  referenceno,
+					IssueDate:    thedate,
+					// WarehouseId:         warehouse.CompanyId,
+					// WarehouseCode:       warehouse.Code,
+					// WarehousePlantId:    ob.WarehousePlantId,
+					// WarehousePlantCode:  warehouse.Code,
 					CategoryId:          v.CategoryId,
 					CategoryDescription: v.CategoryDescription,
 					ItemNo:              k + 1,
@@ -535,7 +536,7 @@ func (c *DoController) Put() {
 	status_id = querydata.StatusId
 	valid := validation.Validation{}
 	valid.Required(strings.TrimSpace(ob.IssueDate), "issue_date").Message("Is required")
-	valid.Required(ob.WarehousePlantId, "warehouse_plant_id").Message("Is required")
+	// valid.Required(ob.WarehousePlantId, "warehouse_plant_id").Message("Is required")
 	valid.Required(ob.CustomerId, "customer_id").Message("Is required")
 	// valid.Required(ob.TransporterId, "transporter_id").Message("Is required")
 	// valid.Required(ob.PlateNo, "plate_no").Message("Is required")
@@ -606,28 +607,28 @@ func (c *DoController) Put() {
 		}
 	}
 
-	// check warehouse
-	var warehouse models.SimplePlantRtnJson
-	if err = o.Raw("select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(ob.WarehousePlantId) + "").QueryRow(&warehouse); err == orm.ErrNoRows {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, "Warehouse unregistered/Illegal data")
-		c.ServeJSON()
-		return
-	}
+	// // check warehouse
+	// var warehouse models.SimplePlantRtnJson
+	// if err = o.Raw("select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where t0.id = " + utils.Int2String(ob.WarehousePlantId) + "").QueryRow(&warehouse); err == orm.ErrNoRows {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, "Warehouse unregistered/Illegal data")
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
-		c.ServeJSON()
-		return
-	}
+	// if err != nil {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if warehouse.Status == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", warehouse.Code))
-		c.ServeJSON()
-		return
-	}
+	// if warehouse.Status == 0 {
+	// 	c.Ctx.ResponseWriter.WriteHeader(402)
+	// 	utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", warehouse.Code))
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
 	// check transporter
 	var transporter models.Company
@@ -772,10 +773,10 @@ func (c *DoController) Put() {
 	t_delivery_order.IssueDate = thedate
 	t_delivery_order.ReferenceNo = referenceno
 	t_delivery_order.SeqNo = seqno
-	t_delivery_order.WarehouseId = warehouse.CompanyId
-	t_delivery_order.WarehouseCode = warehouse.CompanyCode
-	t_delivery_order.WarehousePlantId = ob.WarehousePlantId
-	t_delivery_order.WarehousePlantCode = warehouse.Code
+	// t_delivery_order.WarehouseId = warehouse.CompanyId
+	// t_delivery_order.WarehouseCode = warehouse.CompanyCode
+	// t_delivery_order.WarehousePlantId = ob.WarehousePlantId
+	// t_delivery_order.WarehousePlantCode = warehouse.Code
 	t_delivery_order.CustomerId = ob.CustomerId
 	t_delivery_order.CustomerCode = customers.Code
 	t_delivery_order.PlantId = ob.PlantId
@@ -801,14 +802,14 @@ func (c *DoController) Put() {
 			mutex.Lock()
 			if v.Id == 0 {
 				inputDetail = append(inputDetail, models.DoDetail{
-					SalesOrderId:        ob.SalesOrderId,
-					SalesOrderNo:        so_reference_no,
-					ReferenceNo:         referenceno,
-					IssueDate:           thedate,
-					WarehouseId:         warehouse.CompanyId,
-					WarehouseCode:       warehouse.CompanyCode,
-					WarehousePlantId:    ob.WarehousePlantId,
-					WarehousePlantCode:  warehouse.Code,
+					SalesOrderId: ob.SalesOrderId,
+					SalesOrderNo: so_reference_no,
+					ReferenceNo:  referenceno,
+					IssueDate:    thedate,
+					// WarehouseId:         warehouse.CompanyId,
+					// WarehouseCode:       warehouse.CompanyCode,
+					// WarehousePlantId:    ob.WarehousePlantId,
+					// WarehousePlantCode:  warehouse.Code,
 					CategoryId:          v.CategoryId,
 					CategoryDescription: v.CategoryDescription,
 					ItemNo:              k + 1,
@@ -833,15 +834,15 @@ func (c *DoController) Put() {
 				i += 1
 			} else {
 				putDetail = append(putDetail, models.DoDetail{
-					Id:                  v.Id,
-					SalesOrderId:        ob.SalesOrderId,
-					SalesOrderNo:        so_reference_no,
-					ReferenceNo:         referenceno,
-					IssueDate:           thedate,
-					WarehouseId:         warehouse.CompanyId,
-					WarehouseCode:       warehouse.CompanyCode,
-					WarehousePlantId:    ob.WarehousePlantId,
-					WarehousePlantCode:  warehouse.Code,
+					Id:           v.Id,
+					SalesOrderId: ob.SalesOrderId,
+					SalesOrderNo: so_reference_no,
+					ReferenceNo:  referenceno,
+					IssueDate:    thedate,
+					// WarehouseId:         warehouse.CompanyId,
+					// WarehouseCode:       warehouse.CompanyCode,
+					// WarehousePlantId:    ob.WarehousePlantId,
+					// WarehousePlantCode:  warehouse.Code,
 					CategoryId:          v.CategoryId,
 					CategoryDescription: v.CategoryDescription,
 					ItemNo:              k + 1,
