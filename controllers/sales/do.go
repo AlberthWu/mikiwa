@@ -213,29 +213,29 @@ func (c *DoController) Post() {
 	// 	return
 	// }
 
-	// check transporter
-	var transporter models.Company
-	err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
-	if err == orm.ErrNoRows {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, "Logistic unregistered/Illegal data")
-		c.ServeJSON()
-		return
-	}
+	// // check transporter
+	// var transporter models.Company
+	// err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
+	// if err == orm.ErrNoRows {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, "Logistic unregistered/Illegal data")
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
-		c.ServeJSON()
-		return
-	}
+	// if err != nil {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if transporter.Status == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
-		c.ServeJSON()
-		return
-	}
+	// if transporter.Status == 0 {
+	// 	c.Ctx.ResponseWriter.WriteHeader(402)
+	// 	utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
 	// check outlet
 	var outlet models.Company
@@ -346,13 +346,13 @@ func (c *DoController) Post() {
 		// WarehouseCode:      warehouse.CompanyCode,
 		// WarehousePlantId:   ob.WarehousePlantId,
 		// WarehousePlantCode: warehouse.Code,
-		CustomerId:        ob.CustomerId,
-		CustomerCode:      customers.Code,
-		PlantId:           ob.PlantId,
-		PlantCode:         plants.Code,
-		DeliveryAddress:   ob.DeliveryAddress,
-		TransporterId:     ob.TransporterId,
-		TransporterCode:   transporter.Code,
+		CustomerId:      ob.CustomerId,
+		CustomerCode:    customers.Code,
+		PlantId:         ob.PlantId,
+		PlantCode:       plants.Code,
+		DeliveryAddress: ob.DeliveryAddress,
+		// TransporterId:     ob.TransporterId,
+		// TransporterCode:   transporter.Code,
 		CourierId:         ob.CourierId,
 		PlateNo:           ob.PlateNo,
 		Notes:             ob.Notes,
@@ -630,29 +630,29 @@ func (c *DoController) Put() {
 	// 	return
 	// }
 
-	// check transporter
-	var transporter models.Company
-	err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
-	if err == orm.ErrNoRows {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, "Logistic unregistered/Illegal data")
-		c.ServeJSON()
-		return
-	}
+	// // check transporter
+	// var transporter models.Company
+	// err = models.Companies().Filter("id", ob.TransporterId).Filter("deleted_at__isnull", true).Filter("CompanyTypes__TypeId__Id", base.Transporter).One(&transporter)
+	// if err == orm.ErrNoRows {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, "Logistic unregistered/Illegal data")
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if err != nil {
-		c.Ctx.ResponseWriter.WriteHeader(401)
-		utils.ReturnHTTPError(&c.Controller, 401, err.Error())
-		c.ServeJSON()
-		return
-	}
+	// if err != nil {
+	// 	c.Ctx.ResponseWriter.WriteHeader(401)
+	// 	utils.ReturnHTTPError(&c.Controller, 401, err.Error())
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
-	if transporter.Status == 0 {
-		c.Ctx.ResponseWriter.WriteHeader(402)
-		utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
-		c.ServeJSON()
-		return
-	}
+	// if transporter.Status == 0 {
+	// 	c.Ctx.ResponseWriter.WriteHeader(402)
+	// 	utils.ReturnHTTPError(&c.Controller, 402, fmt.Sprintf("Error '%v' has been set as INACTIVE", transporter.Code))
+	// 	c.ServeJSON()
+	// 	return
+	// }
 
 	// check outlet
 	var outlet models.Company
@@ -782,8 +782,8 @@ func (c *DoController) Put() {
 	t_delivery_order.PlantId = ob.PlantId
 	t_delivery_order.PlantCode = plants.Code
 	t_delivery_order.DeliveryAddress = ob.DeliveryAddress
-	t_delivery_order.TransporterId = ob.TransporterId
-	t_delivery_order.TransporterCode = transporter.Code
+	// t_delivery_order.TransporterId = ob.TransporterId
+	// t_delivery_order.TransporterCode = transporter.Code
 	t_delivery_order.CourierId = ob.CourierId
 	t_delivery_order.PlateNo = ob.PlateNo
 	t_delivery_order.Notes = ob.Notes
