@@ -312,33 +312,34 @@ func (c *SalesOrderController) Post() {
 	seqno, referenceno := models.GenerateNumber(thedate, 1, ob.CustomerId)
 
 	t_sales_order = models.SalesOrder{
-		IssueDate:       thedate,
-		ReferenceNo:     referenceno,
-		SeqNo:           seqno,
-		DueDate:         dueDate,
-		PoolId:          1,
-		OutletId:        ob.OutletId,
-		OutletName:      outlet.Name,
-		CustomerId:      ob.CustomerId,
-		CustomerCode:    customers.Code,
-		PlantId:         ob.PlantId,
-		PlantName:       plants.Name,
-		Terms:           customers.Terms,
-		DeliveryAddress: ob.DeliveryAddress,
-		EmployeeId:      ob.EmployeeId,
-		EmployeeName:    "",
-		TransporterId:   ob.TransporterId,
-		TransporterCode: transporter.Code,
-		LeadTime:        ob.LeadTime,
-		Subtotal:        subtotal_,
-		TotalDisc:       totalDisc_,
-		Dpp:             dpp_amount,
-		Ppn:             ppn,
-		PpnAmount:       ppn_amount,
-		Total:           total,
-		StatusId:        ob.StatusId,
-		CreatedBy:       user_name,
-		UpdatedBy:       user_name,
+		IssueDate:         thedate,
+		ReferenceNo:       referenceno,
+		SeqNo:             seqno,
+		DueDate:           dueDate,
+		PoolId:            1,
+		OutletId:          ob.OutletId,
+		OutletName:        outlet.Name,
+		CustomerId:        ob.CustomerId,
+		CustomerCode:      customers.Code,
+		PlantId:           ob.PlantId,
+		PlantName:         plants.Name,
+		Terms:             customers.Terms,
+		DeliveryAddress:   ob.DeliveryAddress,
+		EmployeeId:        ob.EmployeeId,
+		EmployeeName:      "",
+		TransporterId:     ob.TransporterId,
+		TransporterCode:   transporter.Code,
+		LeadTime:          ob.LeadTime,
+		Subtotal:          subtotal_,
+		TotalDisc:         totalDisc_,
+		Dpp:               dpp_amount,
+		Ppn:               ppn,
+		PpnAmount:         ppn_amount,
+		Total:             total,
+		StatusId:          ob.StatusId,
+		StatusDescription: base.GetStatusSo(int(ob.StatusId)),
+		CreatedBy:         user_name,
+		UpdatedBy:         user_name,
 	}
 
 	wg = new(sync.WaitGroup)
@@ -833,6 +834,7 @@ func (c *SalesOrderController) Put() {
 	t_sales_order.PpnAmount = ppn_amount
 	t_sales_order.Total = total
 	t_sales_order.StatusId = ob.StatusId
+	t_sales_order.StatusDescription = base.GetStatusSo(int(ob.StatusId))
 	t_sales_order.CreatedBy = querydata.CreatedBy
 	t_sales_order.UpdatedBy = user_name
 

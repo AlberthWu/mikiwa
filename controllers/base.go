@@ -80,8 +80,23 @@ var StatusDoString = map[int]string{
 	VoidDo:     "Void",
 }
 
+var StatusSoString = map[int]string{
+	OpenSo:     "Draft",
+	ConfirmSo:  "Confirmed",
+	ProgressSo: "Shipping",
+	DoneSo:     "Done",
+	RejectSo:   "Reject",
+	CloseSo:    "Close",
+	VoidSo:     "Void",
+}
+
 func GetStatusDo(b int) string {
 	s := StatusDoString[b]
+	return s
+}
+
+func GetStatusSo(b int) string {
+	s := StatusSoString[b]
 	return s
 }
 
