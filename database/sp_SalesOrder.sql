@@ -113,9 +113,9 @@ BEGIN
 		SET @s =  (concat ("select id,id sales_order_id,reference_no,issue_date,lead_time,due_date,over_due,pool_id,pool_name,outlet_id,outlet_name,customer_id,customer_code,customer_name,plant_id,plant_name,full_name,terms,delivery_address,employee_id,employee_name
 								,subtotal,total_disc,dpp,ppn,ppn_amount,total
                                 ,status_id,status_description,status_data
-								,'reference_no,issue_date,due_date,over_due,outlet_name,full_name,terms,delivery_address,employee_name,subtotal,total_disc,dpp,ppn_amount,total,status_description,status_data' field_key
+								,'reference_no,issue_date,due_date,over_due,outlet_name,full_name,delivery_address,employee_name,subtotal,total_disc,dpp,ppn_amount,total,status_description,status_data' field_key
 								,'No SO,Tgl,Tgl akhir,Sisa,Outlet,Customer,Alamat pengiriman,Salesman,Subtotal,Diskon,Dpp,Ppn,Total,Status,Status Data' field_label
-								,'reference_no,issue_date,due_date,over_due,outlet_name,full_name,terms,delivery_address,employee_name,subtotal,total_disc,dpp,ppn_amount,total,status_description,status_data' field_export
+								,'reference_no,issue_date,due_date,over_due,outlet_name,full_name,delivery_address,employee_name,subtotal,total_disc,dpp,ppn_amount,total,status_description,status_data' field_export
 								,'No SO,Tgl,Tgl akhir,Sisa,Outlet,Customer,Alamat pengiriman,Salesman,Subtotal,Diskon,Dpp,Ppn,Total,Status,Status Data' field_export_label
 								,'terms,subtotal,total_disc,dpp,ppn_amount,total' field_int
 								,'subtotal,total_disc,dpp,ppn_amount,total' field_footer

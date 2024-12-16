@@ -237,6 +237,9 @@ type (
 		Code        string `json:"code"`
 		Name        string `json:"name"`
 		FullName    string `json:"full_name"`
+		Address     string `json:"address"`
+		Pic         string `json:"pic"`
+		Phone       string `json:"phone"`
 		CompanyId   int    `json:"company_id"`
 		CompanyCode string `json:"company_code"`
 		Status      int8   `json:"status"`
@@ -464,9 +467,9 @@ func (t *Plant) GetAllList(company_id, company_type_id int, keyword string) (m [
 	var num int64
 
 	if company_type_id != 0 {
-		num, err = o.Raw("select * from (select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id in (select company_id from company_type where type_id = " + utils.Int2String(company_type_id) + ")) x where full_name like '%" + keyword + "%' ").QueryRows(&m)
+		num, err = o.Raw("select * from (select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,address,pic,phone,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id in (select company_id from company_type where type_id = " + utils.Int2String(company_type_id) + ")) x where full_name like '%" + keyword + "%' ").QueryRows(&m)
 	} else {
-		num, err = o.Raw("select * from (select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(company_id) + ") x where full_name like '%" + keyword + "%' ").QueryRows(&m)
+		num, err = o.Raw("select * from (select t0.id,t0.code,name,concat(t1.code,' - ',t0.name) full_name,address,pic,phone,company_id,t1.code company_code,status from plants t0 left join (select id,`code` from companies) t1 on t1.id = t0.company_id where deleted_at is null and company_id = " + utils.Int2String(company_id) + ") x where full_name like '%" + keyword + "%' ").QueryRows(&m)
 	}
 
 	if num == 0 && err == nil {
